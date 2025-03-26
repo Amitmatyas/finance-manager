@@ -75,4 +75,4 @@ function onTransactionDetected(user, transactionDetails) {
 
 // חשוב - מייצא את הפונקציות לחלון הגלובלי
 window.onLoginDetected = onLoginDetected;
-window.onTransactionDetected = onTransactionDetected;
+window.onTrans
