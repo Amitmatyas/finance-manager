@@ -6,9 +6,17 @@ const emailjsConfig = {
     TRANSACTION_TEMPLATE: "template_transaction"
 };
 
-// הגדרות קבועות
+// פונקציה שמחזירה את התאריך והשעה הנוכחיים בפורמט הרצוי
+function getCurrentDateTime() {
+    const now = new Date();
+    return now.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+// הגדרות קבועות - עכשיו דינמיות
 const SYSTEM_CONFIG = {
-    CURRENT_TIME: "2025-03-26 20:39:51",
+    get CURRENT_TIME() {
+        return getCurrentDateTime();
+    },
     USER_LOGIN: "Amitmatyas"
 };
 
