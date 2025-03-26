@@ -24,14 +24,19 @@
             <input id="passwordInput" type="password" placeholder="סיסמה" 
                    class="w-full p-3 border rounded-lg text-right">
             
-            <div class="flex space-x-4">
+            <div class="flex flex-col space-y-4">
                 <button id="loginBtn" 
-                        class="flex-1 bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600">
+                        class="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600">
                     התחבר
                 </button>
                 <button id="registerBtn" 
-                        class="flex-1 bg-green-500 text-white py-3 rounded-lg hover:bg-green-600">
+                        class="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600">
                     הירשם
+                </button>
+                <button id="googleLoginBtn" 
+                        class="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 flex items-center justify-center">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google-icon.svg" alt="Google logo" class="w-6 h-6 mr-2">
+                    התחבר עם גוגל
                 </button>
             </div>
         </div>
@@ -107,18 +112,54 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // משתנים גלובליים
-        let currentUser = null;
-        let balance = 0;
-        let transactions = [];
-        let chart = null;
+        // הוספת ספק כניסה של גוגל
+        const googleProvider = new firebase.auth.GoogleAuthProvider();
 
-        // פונקציית התחברות
+        // פונקציית התחברות עם גוגל
+        function loginWithGoogle() {
+            auth.signInWithPopup(googleProvider)
+                .then((result) => {
+                    console.log('התחברות עם גוגל הצליחה:', result.user);
+                    currentUser = result.user;
+                    switchToApp();
+                    
+                    // בדיקה אם המשתמש קיים כבר במסד הנתונים
+                    const userRef = db.collection('users').doc(currentUser.uid);
+                    userRef.get().then((doc) => {
+                        if (!doc.exists) {
+                            // אם המשתמש לא קיים, יצירת מסמך חדש
+                            initializeUserData();
+                        } else {
+                            // אם המשתמש קיים, טעינת הנתונים
+                            loadUserData();
+                        }
+                    });
+                })
+                .catch((error) => {
+                    console.error('שגיאת התחברות עם גוגל:', error);
+                    
+                    // טיפול בשגיאות
+                    switch(error.code) {
+                        case 'auth/account-exists-with-different-credential':
+                            alert('קיים חשבון עם אותה כתובת דוא"ל בספק אחר');
+                            break;
+                        case 'auth/popup-blocked':
+                            alert('החלון נחסם. אנא הפעל חלונות מוקפצים');
+                            break;
+                        case 'auth/popup-closed-by-user':
+                            alert('ביטלת את תהליך ההתחברות');
+                            break;
+                        default:
+                            alert('שגיאה בהתחברות: ' + error.message);
+                    }
+                });
+        }
+
+        // פונקציית התחברות סטנדרטית
         function login() {
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
 
-            // בדיקות תקינות קלט
             if (!email || !password) {
                 alert('אנא הזן אימייל וסיסמה');
                 return;
@@ -134,7 +175,6 @@
                 .catch((error) => {
                     console.error('שגיאת התחברות:', error);
                     
-                    // טיפול מפורט בשגיאות
                     switch(error.code) {
                         case 'auth/invalid-email':
                             alert('כתובת האימייל שגויה');
@@ -392,9 +432,10 @@
             }
         });
 
-        // מאזיני אירועים - שימוש בaddEventListener במקום onclick
+        // מאזיני אירועים
         document.getElementById('loginBtn').addEventListener('click', login);
         document.getElementById('registerBtn').addEventListener('click', register);
+        document.getElementById('googleLoginBtn').addEventListener('click', loginWithGoogle);
         document.getElementById('incomeBtn').addEventListener('click', () => openModal('income'));
         document.getElementById('expenseBtn').addEventListener('click', () => openModal('expense'));
     </script>
