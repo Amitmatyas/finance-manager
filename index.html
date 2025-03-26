@@ -514,6 +514,85 @@
                 alert('שגיאה בהתחברות עם Google: ' + error.message);
             }
         };
+        // פונקציות מודאל
+        let currentTransactionType = '';
+
+        window.openModal = (type) => {
+            currentTransactionType = type;
+            document.getElementById('transactionModal').classList.remove('hidden');
+            document.getElementById('transactionModal').classList.add('flex');
+            document.getElementById('modalTitle').textContent = type === 'income' ? 'הוספת הכנסה' : 'הוספת הוצאה';
+            document.getElementById('amountInput').value = '';
+            document.getElementById('descriptionInput').value = '';
+            document.getElementById('amountInput').focus();
+        };
+
+        window.closeModal = () => {
+            document.getElementById('transactionModal').classList.add('hidden');
+            document.getElementById('transactionModal').classList.remove('flex');
+        };
+
+        window.saveTransaction = async () => {
+            const amount = parseFloat(document.getElementById('amountInput').value);
+            const description = document.getElementById('descriptionInput').value;
+
+            if (!amount || isNaN(amount)) {
+                alert('אנא הזן סכום תקין');
+                return;
+            }
+
+            const transaction = {
+                type: currentTransactionType,
+                amount: Math.abs(amount),
+                description,
+                date: new Date().toISOString()
+            };
+
+            const newTransactions = [...transactions, transaction];
+            const newBalance = currentTransactionType === 'income' 
+                ? balance + amount 
+                : balance - amount;
+
+            try {
+                // שליחת מייל על העסקה
+                await onTransactionDetected({
+                    email: currentUser.email,
+                    displayName: currentUser.displayName || 'משתמש יקר'
+                }, {
+                    amount: transaction.amount,
+                    description: transaction.description,
+                    type: transaction.type,
+                    newBalance: newBalance
+                });
+
+                await saveUserData(newBalance, newTransactions);
+                updateUI(newBalance, newTransactions);
+                closeModal();
+            } catch (error) {
+                console.error('Error saving transaction:', error);
+                alert('שגיאה בשמירת העסקה: ' + error.message);
+            }
+        };
+
+        // פונקציית התנתקות
+        window.logout = async () => {
+            try {
+                await signOut(auth);
+                currentUser = null;
+                document.getElementById('appContainer').classList.add('hidden');
+                document.getElementById('loginContainer').classList.remove('hidden');
+                document.getElementById('emailInput').value = '';
+                document.getElementById('passwordInput').value = '';
+                if (chart) {
+                    chart.destroy();
+                    chart = null;
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert('שגיאה בהתנתקות: ' + error.message);
+            }
+        };
+
         // מאזיני אירועים לכפתורים
         document.getElementById('loginBtn').addEventListener('click', () => {
             window.login();
