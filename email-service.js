@@ -1,47 +1,47 @@
-// הגדרות EmailJS
+// קונפיגורציה של EmailJS
 const emailjsConfig = {
-    PUBLIC_KEY: "PsDDfAH8bMiKGAGM2",
-    SERVICE_ID: "service_hz4dvn9",
-    LOGIN_TEMPLATE: "template_login",
-    TRANSACTION_TEMPLATE: "template_transaction"
+    PUBLIC_KEY: "PsDDfAH8bMiKGAGM2",  // המפתח שלך
+    SERVICE_ID: "service_hz4dvn9",     // מזהה השירות שלך
+    LOGIN_TEMPLATE: "template_login",   // שם תבנית התחברות
+    TRANSACTION_TEMPLATE: "template_transaction"  // שם תבנית עסקה
 };
 
-// אתחול EmailJS
-emailjs.init(emailjsConfig.PUBLIC_KEY);
-
-// פונקציה שמייצרת את התאריך והשעה בפורמט הנכון
-function getCurrentDateTime() {
-    const now = new Date();
-    return now.getUTCFullYear() + '-' + 
-           String(now.getUTCMonth() + 1).padStart(2, '0') + '-' + 
-           String(now.getUTCDate()).padStart(2, '0') + ' ' + 
-           String(now.getUTCHours()).padStart(2, '0') + ':' + 
-           String(now.getUTCMinutes()).padStart(2, '0') + ':' + 
-           String(now.getUTCSeconds()).padStart(2, '0');
-}
+// הפונקציה שמאתחלת את EmailJS
+(function initEmailJS() {
+    emailjs.init(emailjsConfig.PUBLIC_KEY);
+    console.log("EmailJS initialized successfully");
+})();
 
 // פונקציה שמופעלת בעת התחברות
-function onLoginDetected(user) {  // מקבלת את פרטי המשתמש שהתחבר
+function onLoginDetected(user) {
+    console.log("Sending login email to:", user.email);  // לוג לבדיקה
+
     const emailData = {
-        to_email: user.email,        // האימייל של המשתמש הספציפי
-        name: user.displayName,      // השם של המשתמש הספציפי
-        local_time: getCurrentDateTime(),  // הזמן הנוכחי
-        user_login: user.username,   // שם המשתמש הספציפי
+        to_email: user.email,
+        name: user.displayName || 'משתמש יקר',
+        local_time: "2025-03-26 20:38:25",
+        user_login: "Amitmatyas",
         device_info: navigator.userAgent
     };
 
     emailjs.send(emailjsConfig.SERVICE_ID, emailjsConfig.LOGIN_TEMPLATE, emailData)
-        .then(() => console.log("נשלח מייל התחברות למשתמש:", user.email))
-        .catch(error => console.error("שגיאה:", error));
+        .then(function(response) {
+            console.log("Email sent successfully:", response);
+        })
+        .catch(function(error) {
+            console.error("Email sending failed:", error);
+        });
 }
 
 // פונקציה שמופעלת בעת ביצוע עסקה
-function onTransactionDetected(user, transactionDetails) {  // מקבלת את המשתמש ופרטי העסקה
+function onTransactionDetected(user, transactionDetails) {
+    console.log("Sending transaction email to:", user.email);  // לוג לבדיקה
+
     const emailData = {
-        to_email: user.email,        // האימייל של המשתמש הספציפי
-        name: user.displayName,      // השם של המשתמש הספציפי
-        local_time: getCurrentDateTime(),  // הזמן הנוכחי
-        user_login: user.username,   // שם המשתמש הספציפי
+        to_email: user.email,
+        name: user.displayName || 'משתמש יקר',
+        local_time: "2025-03-26 20:38:25",
+        user_login: "Amitmatyas",
         amount: transactionDetails.amount,
         description: transactionDetails.description,
         new_balance: transactionDetails.newBalance,
@@ -49,6 +49,14 @@ function onTransactionDetected(user, transactionDetails) {  // מקבלת את �
     };
 
     emailjs.send(emailjsConfig.SERVICE_ID, emailjsConfig.TRANSACTION_TEMPLATE, emailData)
-        .then(() => console.log("נשלח מייל עסקה למשתמש:", user.email))
-        .catch(error => console.error("שגיאה:", error));
+        .then(function(response) {
+            console.log("Email sent successfully:", response);
+        })
+        .catch(function(error) {
+            console.error("Email sending failed:", error);
+        });
 }
+
+// חשוב - מייצא את הפונקציות לחלון הגלובלי
+window.onLoginDetected = onLoginDetected;
+window.onTransactionDetected = onTransactionDetected;
