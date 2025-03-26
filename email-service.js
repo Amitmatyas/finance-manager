@@ -1,12 +1,18 @@
 // קונפיגורציה של EmailJS
 const emailjsConfig = {
-    PUBLIC_KEY: "PsDDfAH8bMiKGAGM2",  // המפתח שלך
-    SERVICE_ID: "service_hz4dvn9",     // מזהה השירות שלך
-    LOGIN_TEMPLATE: "template_login",   // שם תבנית התחברות
-    TRANSACTION_TEMPLATE: "template_transaction"  // שם תבנית עסקה
+    PUBLIC_KEY: "PsDDfAH8bMiKGAGM2",
+    SERVICE_ID: "service_hz4dvn9",
+    LOGIN_TEMPLATE: "template_login",
+    TRANSACTION_TEMPLATE: "template_transaction"
 };
 
-// הפונקציה שמאתחלת את EmailJS
+// הגדרות קבועות
+const SYSTEM_CONFIG = {
+    CURRENT_TIME: "2025-03-26 20:39:51",
+    USER_LOGIN: "Amitmatyas"
+};
+
+// אתחול EmailJS
 (function initEmailJS() {
     emailjs.init(emailjsConfig.PUBLIC_KEY);
     console.log("EmailJS initialized successfully");
@@ -14,46 +20,48 @@ const emailjsConfig = {
 
 // פונקציה שמופעלת בעת התחברות
 function onLoginDetected(user) {
-    console.log("Sending login email to:", user.email);  // לוג לבדיקה
+    console.log("Attempting to send login email to:", user.email);
 
     const emailData = {
         to_email: user.email,
         name: user.displayName || 'משתמש יקר',
-        local_time: "2025-03-26 20:38:25",
-        user_login: "Amitmatyas",
+        local_time: SYSTEM_CONFIG.CURRENT_TIME,
+        user_login: SYSTEM_CONFIG.USER_LOGIN,
         device_info: navigator.userAgent
     };
 
-    emailjs.send(emailjsConfig.SERVICE_ID, emailjsConfig.LOGIN_TEMPLATE, emailData)
+    return emailjs.send(emailjsConfig.SERVICE_ID, emailjsConfig.LOGIN_TEMPLATE, emailData)
         .then(function(response) {
-            console.log("Email sent successfully:", response);
+            console.log("Login email sent successfully:", response);
         })
         .catch(function(error) {
-            console.error("Email sending failed:", error);
+            console.error("Failed to send login email:", error);
+            throw error;
         });
 }
 
 // פונקציה שמופעלת בעת ביצוע עסקה
 function onTransactionDetected(user, transactionDetails) {
-    console.log("Sending transaction email to:", user.email);  // לוג לבדיקה
+    console.log("Attempting to send transaction email to:", user.email);
 
     const emailData = {
         to_email: user.email,
         name: user.displayName || 'משתמש יקר',
-        local_time: "2025-03-26 20:38:25",
-        user_login: "Amitmatyas",
+        local_time: SYSTEM_CONFIG.CURRENT_TIME,
+        user_login: SYSTEM_CONFIG.USER_LOGIN,
         amount: transactionDetails.amount,
-        description: transactionDetails.description,
+        description: transactionDetails.description || '',
         new_balance: transactionDetails.newBalance,
         isIncome: transactionDetails.type === 'income'
     };
 
-    emailjs.send(emailjsConfig.SERVICE_ID, emailjsConfig.TRANSACTION_TEMPLATE, emailData)
+    return emailjs.send(emailjsConfig.SERVICE_ID, emailjsConfig.TRANSACTION_TEMPLATE, emailData)
         .then(function(response) {
-            console.log("Email sent successfully:", response);
+            console.log("Transaction email sent successfully:", response);
         })
         .catch(function(error) {
-            console.error("Email sending failed:", error);
+            console.error("Failed to send transaction email:", error);
+            throw error;
         });
 }
 
