@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <title>מנהל כספים - מאת עמית מטיאס</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <!-- קונטיינר התחברות -->
     <div id="loginContainer" class="container mx-auto max-w-md bg-white rounded-xl shadow-2xl p-6">
         <div class="text-center mb-6">
             <h1 class="text-3xl font-bold text-blue-600">מנהל כספים</h1>
@@ -36,6 +37,7 @@
         </div>
     </div>
 
+    <!-- קונטיינר אפליקציה -->
     <div id="appContainer" class="container mx-auto max-w-md bg-white rounded-xl shadow-2xl p-6 hidden">
         <div class="text-center mb-6">
             <h1 class="text-3xl font-bold text-blue-600">מנהל כספים</h1>
@@ -66,7 +68,7 @@
 
         <canvas id="chartArea" class="mt-6 w-full"></canvas>
 
-        <!-- Modal -->
+        <!-- מודאל עסקה -->
         <div id="transactionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
             <div class="bg-white rounded-xl p-6 w-96">
                 <h2 id="modalTitle" class="text-2xl font-bold mb-4"></h2>
@@ -89,11 +91,15 @@
     </div>
 
     <script>
-        // Firebase configuration (replace with your own Firebase project config)
+        // Firebase Configuration
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            projectId: "YOUR_PROJECT_ID"
+            apiKey: "AIzaSyCtlCl3Mnxr22HpHe3QaHwizNL4VNOdlGc",
+            authDomain: "finnance-manger.firebaseapp.com",
+            projectId: "finnance-manger",
+            storageBucket: "finnance-manger.firebasestorage.app",
+            messagingSenderId: "341045979158",
+            appId: "1:341045979158:web:57c180406d33d5b6a76d37",
+            measurementId: "G-G1HVDTTG6K"
         };
 
         // Initialize Firebase
@@ -101,12 +107,13 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
+        // משתנים גלובליים
         let currentUser = null;
         let balance = 0;
         let transactions = [];
         let chart = null;
 
-        // Authentication Functions
+        // פונקציית התחברות
         function login() {
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
@@ -122,6 +129,7 @@
                 });
         }
 
+        // פונקציית הרשמה
         function register() {
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
@@ -137,6 +145,7 @@
                 });
         }
 
+        // פונקציית התנתקות
         function logout() {
             auth.signOut().then(() => {
                 switchToLogin();
@@ -145,6 +154,7 @@
             });
         }
 
+        // החלפת מסכים
         function switchToLogin() {
             document.getElementById('loginContainer').classList.remove('hidden');
             document.getElementById('appContainer').classList.add('hidden');
@@ -156,6 +166,7 @@
             document.getElementById('userEmail').textContent = currentUser.email;
         }
 
+        // אתחול נתוני משתמש
         function initializeUserData() {
             db.collection('users').doc(currentUser.uid).set({
                 balance: 0,
@@ -164,6 +175,7 @@
             updateUI(0, []);
         }
 
+        // טעינת נתוני משתמש
         function loadUserData() {
             db.collection('users').doc(currentUser.uid).get()
                 .then((doc) => {
@@ -179,6 +191,7 @@
                 });
         }
 
+        // שמירת נתוני משתמש
         function saveUserData(newBalance, newTransactions) {
             db.collection('users').doc(currentUser.uid).update({
                 balance: newBalance,
@@ -186,6 +199,7 @@
             });
         }
 
+        // פתיחת מודאל עסקה
         function openModal(type) {
             const modal = document.getElementById('transactionModal');
             const titleEl = document.getElementById('modalTitle');
@@ -211,12 +225,14 @@
             modal.dataset.type = type;
         }
 
+        // סגירת מודאל
         function closeModal() {
             const modal = document.getElementById('transactionModal');
             modal.classList.remove('flex');
             modal.classList.add('hidden');
         }
 
+        // שמירת עסקה
         function saveTransaction() {
             const amountInput = document.getElementById('amountInput');
             const descriptionInput = document.getElementById('descriptionInput');
@@ -250,6 +266,7 @@
             closeModal();
         }
 
+        // עדכון ממשק משתמש
         function updateUI(newBalance, newTransactions) {
             balance = newBalance;
             transactions = newTransactions;
@@ -274,6 +291,7 @@
             updateChart();
         }
 
+        // עדכון גרף
         function updateChart() {
             const ctx = document.getElementById('chartArea').getContext('2d');
             
@@ -308,7 +326,7 @@
             });
         }
 
-        // Authentication State Observer
+        // מאזין למצב התחברות
         auth.onAuthStateChanged((user) => {
             if (user) {
                 currentUser = user;
@@ -319,7 +337,7 @@
             }
         });
 
-        // Event Listeners
+        // מאזיני אירועים
         document.getElementById('incomeBtn').addEventListener('click', () => openModal('income'));
         document.getElementById('expenseBtn').addEventListener('click', () => openModal('expense'));
     </script>
