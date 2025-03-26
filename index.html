@@ -22,34 +22,34 @@
                    class="w-full p-3 border rounded-lg text-right">
             
             <div class="flex flex-col space-y-4">
-<!-- כפתור התחברות רגיל -->
-<button id="loginBtn" 
-        class="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600">
-    התחבר
-</button>
+                <!-- כפתור התחברות רגיל -->
+                <button id="loginBtn" 
+                        class="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600">
+                    התחבר
+                </button>
 
-<!-- כפתור הרשמה -->
-<button id="registerBtn" 
-        class="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600">
-    הירשם
-</button>
+                <!-- כפתור הרשמה -->
+                <button id="registerBtn" 
+                        class="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600">
+                    הירשם
+                </button>
 
-<!-- כפתור התחברות עם גוגל -->
-<button id="googleLoginBtn" 
-<button id="googleLoginBtn" 
-        class="w-full bg-purple-700 text-white py-3 rounded-lg hover:bg-purple-800 flex items-center justify-center gap-4 font-semibold">
-    התחבר עם
-    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
-         alt="Google logo" 
-         class="w-7 h-7">
-</button>
+                <!-- כפתור התחברות עם גוגל -->
+                <button id="googleLoginBtn" 
+                        class="w-full bg-purple-700 text-white py-3 rounded-lg hover:bg-purple-800 flex items-center justify-center gap-4 font-semibold">
+                    התחבר עם
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
+                         alt="Google logo" 
+                         class="w-7 h-7">
+                </button>
                 
-    <div class="text-center mt-4">
-        <button id="resetPasswordBtn" 
-                class="text-purple-600 hover:text-purple-800 text-sm font-semibold"
-                onclick="resetPassword()">
-            שכחת סיסמה?
-        </button>
+                <div class="text-center mt-4">
+                    <button id="resetPasswordBtn" 
+                            class="text-gray-800 hover:text-gray-600 text-sm font-semibold"
+                            onclick="resetPassword()">
+                        שכחת סיסמה?
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -107,9 +107,40 @@
         </div>
     </div>
 
+    <!-- מודאל איפוס סיסמה -->
+    <div id="resetPasswordModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-xl w-96">
+            <h2 class="text-2xl font-bold mb-4">איפוס סיסמה</h2>
+            <p class="text-gray-600 mb-4">הזן את כתובת הדוא"ל שלך ונשלח לך קישור לאיפוס הסיסמה</p>
+            <input type="email" 
+                   id="resetEmail" 
+                   class="w-full p-3 border rounded-lg mb-4 text-right" 
+                   placeholder="כתובת דוא״ל">
+            <div class="flex space-x-4">
+                <button onclick="closeResetModal()" 
+                        class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-400">
+                    ביטול
+                </button>
+                <button onclick="sendResetEmail()" 
+                        class="flex-1 bg-black text-white py-3 rounded-lg hover:bg-gray-800">
+                    שלח קישור
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword, 
+            signInWithPopup, 
+            GoogleAuthProvider, 
+            signOut, 
+            onAuthStateChanged,
+            sendPasswordResetEmail
+        } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
         import { getFirestore, doc, setDoc, getDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
 
         // Firebase configuration
@@ -133,6 +164,36 @@
         let balance = 0;
         let transactions = [];
         let chart = null;
+
+        // Reset Password Functions
+        window.resetPassword = () => {
+            document.getElementById('resetPasswordModal').classList.remove('hidden');
+            document.getElementById('resetPasswordModal').classList.add('flex');
+        };
+
+        window.closeResetModal = () => {
+            document.getElementById('resetPasswordModal').classList.add('hidden');
+            document.getElementById('resetPasswordModal').classList.remove('flex');
+            document.getElementById('resetEmail').value = '';
+        };
+
+        window.sendResetEmail = async () => {
+            const email = document.getElementById('resetEmail').value;
+            
+            if (!email) {
+                alert('נא להזין כתובת דוא"ל');
+                return;
+            }
+
+            try {
+                await sendPasswordResetEmail(auth, email);
+                alert('קישור לאיפוס סיסמה נשלח לדוא"ל שלך');
+                closeResetModal();
+            } catch (error) {
+                console.error('שגיאה באיפוס סיסמה:', error);
+                alert('שגיאה באיפוס סיסמה. נא לנסות שוב מאוחר יותר.');
+            }
+        };
 
         // Login with Google
         window.loginWithGoogle = async () => {
