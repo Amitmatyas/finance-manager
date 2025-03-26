@@ -5,13 +5,45 @@
     <title>מנהל כספים - מאת עמית מטיאס</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
-    <div class="container mx-auto max-w-md bg-white rounded-xl shadow-2xl p-6">
+    <div id="loginContainer" class="container mx-auto max-w-md bg-white rounded-xl shadow-2xl p-6">
         <div class="text-center mb-6">
             <h1 class="text-3xl font-bold text-blue-600">מנהל כספים</h1>
-            <p class="text-sm text-gray-500 mt-1">מאת: עמית מטיאס</p>
+            <p class="text-sm text-gray-500 mt-1">התחברות</p>
+        </div>
+        
+        <div class="space-y-4">
+            <input id="emailInput" type="email" placeholder="אימייל" 
+                   class="w-full p-3 border rounded-lg text-right">
+            <input id="passwordInput" type="password" placeholder="סיסמה" 
+                   class="w-full p-3 border rounded-lg text-right">
+            
+            <div class="flex space-x-4">
+                <button onclick="login()" 
+                        class="flex-1 bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600">
+                    התחבר
+                </button>
+                <button onclick="register()" 
+                        class="flex-1 bg-green-500 text-white py-3 rounded-lg hover:bg-green-600">
+                    הירשם
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="appContainer" class="container mx-auto max-w-md bg-white rounded-xl shadow-2xl p-6 hidden">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-blue-600">מנהל כספים</h1>
+            <p id="userEmail" class="text-sm text-gray-500 mt-1"></p>
+            <button onclick="logout()" 
+                    class="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-lg text-sm">
+                התנתק
+            </button>
         </div>
         
         <div class="mb-6">
@@ -57,27 +89,101 @@
     </div>
 
     <script>
-        // קריאת נתונים מהזיכרון המקומי
-        let balance = parseFloat(localStorage.getItem('balance')) || 0;
-        let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+        // Firebase configuration (replace with your own Firebase project config)
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let currentUser = null;
+        let balance = 0;
+        let transactions = [];
         let chart = null;
 
-        // פונקציה לשמירת נתונים בזיכרון המקומי
-        function saveToLocalStorage() {
-            localStorage.setItem('balance', balance);
-            localStorage.setItem('transactions', JSON.stringify(transactions));
+        // Authentication Functions
+        function login() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    currentUser = userCredential.user;
+                    switchToApp();
+                    loadUserData();
+                })
+                .catch((error) => {
+                    alert('שגיאת התחברות: ' + error.message);
+                });
         }
 
-        // הפעלה ראשונית של ממשק משתמש
-        function initializeUI() {
-            updateUI();
-            
-            // הוספת אנימציה לטעינת נתונים
-            const balanceEl = document.getElementById('balance');
-            balanceEl.classList.add('animate-pulse');
-            setTimeout(() => {
-                balanceEl.classList.remove('animate-pulse');
-            }, 1000);
+        function register() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    currentUser = userCredential.user;
+                    switchToApp();
+                    initializeUserData();
+                })
+                .catch((error) => {
+                    alert('שגיאת הרשמה: ' + error.message);
+                });
+        }
+
+        function logout() {
+            auth.signOut().then(() => {
+                switchToLogin();
+            }).catch((error) => {
+                console.error('שגיאת התנתקות:', error);
+            });
+        }
+
+        function switchToLogin() {
+            document.getElementById('loginContainer').classList.remove('hidden');
+            document.getElementById('appContainer').classList.add('hidden');
+        }
+
+        function switchToApp() {
+            document.getElementById('loginContainer').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+            document.getElementById('userEmail').textContent = currentUser.email;
+        }
+
+        function initializeUserData() {
+            db.collection('users').doc(currentUser.uid).set({
+                balance: 0,
+                transactions: []
+            });
+            updateUI(0, []);
+        }
+
+        function loadUserData() {
+            db.collection('users').doc(currentUser.uid).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        updateUI(data.balance || 0, data.transactions || []);
+                    } else {
+                        initializeUserData();
+                    }
+                })
+                .catch((error) => {
+                    console.error('שגיאה בטעינת נתונים:', error);
+                });
+        }
+
+        function saveUserData(newBalance, newTransactions) {
+            db.collection('users').doc(currentUser.uid).update({
+                balance: newBalance,
+                transactions: newTransactions
+            });
         }
 
         function openModal(type) {
@@ -117,7 +223,7 @@
             const type = document.getElementById('transactionModal').dataset.type;
 
             const amount = parseFloat(amountInput.value);
-            const description = descriptionInput.value || 'ללא תיאור';
+            const description = descriptionInput.value.trim();
 
             if (!amount) {
                 alert('אנא הזן סכום');
@@ -132,21 +238,22 @@
             const transaction = {
                 type,
                 amount,
-                description,
-                date: new Date().toLocaleDateString()
+                description: description || null,
+                date: new Date().toISOString()
             };
 
             transactions.unshift(transaction);
             balance += type === 'income' ? amount : -amount;
 
-            // שמירת נתונים בזיכרון המקומי
-            saveToLocalStorage();
-            
-            updateUI();
+            updateUI(balance, transactions);
+            saveUserData(balance, transactions);
             closeModal();
         }
 
-        function updateUI() {
+        function updateUI(newBalance, newTransactions) {
+            balance = newBalance;
+            transactions = newTransactions;
+
             const balanceEl = document.getElementById('balance');
             const transactionsEl = document.getElementById('transactions');
 
@@ -154,7 +261,10 @@
             
             transactionsEl.innerHTML = transactions.map(t => `
                 <li class="flex justify-between p-2 rounded-lg ${t.type === 'income' ? 'bg-green-100' : 'bg-red-100'}">
-                    <span>${t.description}</span>
+                    <div class="flex flex-col">
+                        <span class="text-gray-800">${t.description || ''}</span>
+                        <span class="text-xs text-gray-500">${new Date(t.date).toLocaleString()}</span>
+                    </div>
                     <span class="${t.type === 'income' ? 'text-green-600' : 'text-red-600'}">
                         ${t.type === 'income' ? '+' : '-'} ${t.amount} ₪
                     </span>
@@ -198,12 +308,20 @@
             });
         }
 
-        // מאזין אירועים לכפתורים
+        // Authentication State Observer
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = user;
+                switchToApp();
+                loadUserData();
+            } else {
+                switchToLogin();
+            }
+        });
+
+        // Event Listeners
         document.getElementById('incomeBtn').addEventListener('click', () => openModal('income'));
         document.getElementById('expenseBtn').addEventListener('click', () => openModal('expense'));
-
-        // אתחול ממשק משתמש בטעינת העמוד
-        window.onload = initializeUI;
     </script>
 </body>
 </html>
