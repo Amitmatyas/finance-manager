@@ -3,100 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <title>מנהל כספים - מאת עמית מטיאס</title>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
-</head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
-    <!-- קונטיינר התחברות -->
-    <div id="loginContainer" class="container mx-auto max-w-md bg-white rounded-xl shadow-2xl p-6">
-        <div class="text-center mb-6">
-            <h1 class="text-3xl font-bold text-blue-600">מנהל כספים</h1>
-            <p class="text-sm text-gray-500 mt-1">התחברות</p>
-        </div>
-        
-        <div class="space-y-4">
-            <input id="emailInput" type="email" placeholder="אימייל" 
-                   class="w-full p-3 border rounded-lg text-right">
-            <input id="passwordInput" type="password" placeholder="סיסמה" 
-                   class="w-full p-3 border rounded-lg text-right">
-            
-            <div class="flex flex-col space-y-4">
-                <button id="loginBtn" 
-                        class="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600">
-                    התחבר
-                </button>
-                <button id="registerBtn" 
-                        class="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600">
-                    הירשם
-                </button>
-                <button id="googleLoginBtn" 
-                        class="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 flex items-center justify-center">
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google-icon.svg" alt="Google logo" class="w-6 h-6 mr-2">
-                    התחבר עם גוגל
-                </button>
-            </div>
-        </div>
-    </div>
+    <!-- עדכון לגרסה המודולרית של Firebase -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
 
-    <!-- קונטיינר אפליקציה -->
-    <div id="appContainer" class="container mx-auto max-w-md bg-white rounded-xl shadow-2xl p-6 hidden">
-        <div class="text-center mb-6">
-            <h1 class="text-3xl font-bold text-blue-600">מנהל כספים</h1>
-            <p id="userEmail" class="text-sm text-gray-500 mt-1"></p>
-            <button onclick="logout()" 
-                    class="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-lg text-sm">
-                התנתק
-            </button>
-        </div>
-        
-        <div class="mb-6">
-            <div id="balance" class="text-center text-4xl font-extrabold text-green-600">0 ₪</div>
-        </div>
-
-        <div class="flex space-x-4 mb-6">
-            <button id="incomeBtn" class="flex-1 bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 transition">
-                <span class="text-xl">➕ הכנסה</span>
-            </button>
-            <button id="expenseBtn" class="flex-1 bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition">
-                <span class="text-xl">➖ הוצאה</span>
-            </button>
-        </div>
-
-        <div class="bg-gray-100 rounded-lg p-4">
-            <h2 class="text-xl font-bold mb-4 text-gray-700">היסטוריית תנועות</h2>
-            <ul id="transactions" class="space-y-2 max-h-64 overflow-y-auto"></ul>
-        </div>
-
-        <canvas id="chartArea" class="mt-6 w-full"></canvas>
-
-        <!-- מודאל עסקה -->
-        <div id="transactionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-            <div class="bg-white rounded-xl p-6 w-96">
-                <h2 id="modalTitle" class="text-2xl font-bold mb-4"></h2>
-                <input id="amountInput" type="number" placeholder="סכום" 
-                       class="w-full p-3 border rounded-lg mb-4 text-right">
-                <input id="descriptionInput" type="text" placeholder="תיאור (אופציונלי)" 
-                       class="w-full p-3 border rounded-lg mb-4 text-right">
-                <div class="flex space-x-4">
-                    <button onclick="saveTransaction()" 
-                            class="flex-1 bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600">
-                        שמור
-                    </button>
-                    <button onclick="closeModal()" 
-                            class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-400">
-                        ביטול
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Firebase Configuration
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyCtlCl3Mnxr22HpHe3QaHwizNL4VNOdlGc",
             authDomain: "finnance-manger.firebaseapp.com",
@@ -108,55 +21,37 @@
         };
 
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
 
-        // הוספת ספק כניסה של גוגל
-        const googleProvider = new firebase.auth.GoogleAuthProvider();
+        let currentUser = null;
+        let balance = 0;
+        let transactions = [];
+        let chart = null;
 
-        // פונקציית התחברות עם גוגל
-        function loginWithGoogle() {
-            auth.signInWithPopup(googleProvider)
-                .then((result) => {
-                    console.log('התחברות עם גוגל הצליחה:', result.user);
-                    currentUser = result.user;
-                    switchToApp();
-                    
-                    // בדיקה אם המשתמש קיים כבר במסד הנתונים
-                    const userRef = db.collection('users').doc(currentUser.uid);
-                    userRef.get().then((doc) => {
-                        if (!doc.exists) {
-                            // אם המשתמש לא קיים, יצירת מסמך חדש
-                            initializeUserData();
-                        } else {
-                            // אם המשתמש קיים, טעינת הנתונים
-                            loadUserData();
-                        }
-                    });
-                })
-                .catch((error) => {
-                    console.error('שגיאת התחברות עם גוגל:', error);
-                    
-                    // טיפול בשגיאות
-                    switch(error.code) {
-                        case 'auth/account-exists-with-different-credential':
-                            alert('קיים חשבון עם אותה כתובת דוא"ל בספק אחר');
-                            break;
-                        case 'auth/popup-blocked':
-                            alert('החלון נחסם. אנא הפעל חלונות מוקפצים');
-                            break;
-                        case 'auth/popup-closed-by-user':
-                            alert('ביטלת את תהליך ההתחברות');
-                            break;
-                        default:
-                            alert('שגיאה בהתחברות: ' + error.message);
-                    }
-                });
-        }
+        // Login with Google
+        window.loginWithGoogle = async () => {
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                currentUser = result.user;
+                switchToApp();
+                
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (!userDoc.exists()) {
+                    await initializeUserData();
+                } else {
+                    await loadUserData();
+                }
+            } catch (error) {
+                console.error('Google login error:', error);
+                alert('שגיאה בהתחברות עם Google: ' + error.message);
+            }
+        };
 
-        // פונקציית התחברות סטנדרטית
-        function login() {
+        // Regular login
+        window.login = async () => {
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
 
@@ -165,91 +60,93 @@
                 return;
             }
 
-            auth.signInWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    console.log('התחברות הצליחה:', userCredential.user);
-                    currentUser = userCredential.user;
-                    switchToApp();
-                    loadUserData();
-                })
-                .catch((error) => {
-                    console.error('שגיאת התחברות:', error);
-                    
-                    switch(error.code) {
-                        case 'auth/invalid-email':
-                            alert('כתובת האימייל שגויה');
-                            break;
-                        case 'auth/user-disabled':
-                            alert('המשתמש נחסם');
-                            break;
-                        case 'auth/user-not-found':
-                            alert('משתמש לא נמצא');
-                            break;
-                        case 'auth/wrong-password':
-                            alert('סיסמה שגויה');
-                            break;
-                        default:
-                            alert('שגיאת התחברות: ' + error.message);
-                    }
-                });
-        }
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                currentUser = userCredential.user;
+                switchToApp();
+                await loadUserData();
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('שגיאה בהתחברות: ' + error.message);
+            }
+        };
 
-        // פונקציית הרשמה
-        function register() {
+        // Register
+        window.register = async () => {
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
 
-            // בדיקות תקינות קלט
             if (!email || !password) {
                 alert('אנא הזן אימייל וסיסמה');
                 return;
             }
 
-            if (password.length < 6) {
-                alert('הסיסמה צריכה להיות באורך של לפחות 6 תווים');
-                return;
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                currentUser = userCredential.user;
+                switchToApp();
+                await initializeUserData();
+            } catch (error) {
+                console.error('Registration error:', error);
+                alert('שגיאה בהרשמה: ' + error.message);
             }
+        };
 
-            auth.createUserWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    console.log('הרשמה הצליחה:', userCredential.user);
-                    currentUser = userCredential.user;
-                    switchToApp();
-                    initializeUserData();
-                })
-                .catch((error) => {
-                    console.error('שגיאת הרשמה:', error);
-                    
-                    // טיפול מפורט בשגיאות
-                    switch(error.code) {
-                        case 'auth/email-already-in-use':
-                            alert('כתובת האימייל כבר בשימוש');
-                            break;
-                        case 'auth/invalid-email':
-                            alert('כתובת האימייל שגויה');
-                            break;
-                        case 'auth/operation-not-allowed':
-                            alert('הרשמה לא מאופשרת');
-                            break;
-                        case 'auth/weak-password':
-                            alert('הסיסמה חלשה מדי');
-                            break;
-                        default:
-                            alert('שגיאת הרשמה: ' + error.message);
-                    }
-                });
-        }
-
-        // פונקציית התנתקות
-        function logout() {
-            auth.signOut().then(() => {
+        // Logout
+        window.logout = async () => {
+            try {
+                await signOut(auth);
                 switchToLogin();
-            }).catch((error) => {
-                console.error('שגיאת התנתקות:', error);
-            });
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert('שגיאה בהתנתקות: ' + error.message);
+            }
+        };
+
+        // Initialize user data
+        async function initializeUserData() {
+            try {
+                await setDoc(doc(db, 'users', currentUser.uid), {
+                    balance: 0,
+                    transactions: []
+                });
+                updateUI(0, []);
+            } catch (error) {
+                console.error('Error initializing user data:', error);
+                alert('שגיאה באתחול נתוני משתמש: ' + error.message);
+            }
         }
 
-        // החלפת מסכים
+        // Load user data
+        async function loadUserData() {
+            try {
+                const docSnap = await getDoc(doc(db, 'users', currentUser.uid));
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    updateUI(data.balance || 0, data.transactions || []);
+                } else {
+                    await initializeUserData();
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                alert('שגיאה בטעינת נתונים: ' + error.message);
+            }
+        }
+
+        // Save user data
+        async function saveUserData(newBalance, newTransactions) {
+            try {
+                await updateDoc(doc(db, 'users', currentUser.uid), {
+                    balance: newBalance,
+                    transactions: newTransactions
+                });
+            } catch (error) {
+                console.error('Error saving user data:', error);
+                alert('שגיאה בשמירת נתונים: ' + error.message);
+            }
+        }
+
+        // UI functions
         function switchToLogin() {
             document.getElementById('loginContainer').classList.remove('hidden');
             document.getElementById('appContainer').classList.add('hidden');
@@ -261,41 +158,7 @@
             document.getElementById('userEmail').textContent = currentUser.email;
         }
 
-        // אתחול נתוני משתמש
-        function initializeUserData() {
-            db.collection('users').doc(currentUser.uid).set({
-                balance: 0,
-                transactions: []
-            });
-            updateUI(0, []);
-        }
-
-        // טעינת נתוני משתמש
-        function loadUserData() {
-            db.collection('users').doc(currentUser.uid).get()
-                .then((doc) => {
-                    if (doc.exists) {
-                        const data = doc.data();
-                        updateUI(data.balance || 0, data.transactions || []);
-                    } else {
-                        initializeUserData();
-                    }
-                })
-                .catch((error) => {
-                    console.error('שגיאה בטעינת נתונים:', error);
-                });
-        }
-
-        // שמירת נתוני משתמש
-        function saveUserData(newBalance, newTransactions) {
-            db.collection('users').doc(currentUser.uid).update({
-                balance: newBalance,
-                transactions: newTransactions
-            });
-        }
-
-        // פתיחת מודאל עסקה
-        function openModal(type) {
+        window.openModal = (type) => {
             const modal = document.getElementById('transactionModal');
             const titleEl = document.getElementById('modalTitle');
             const amountInput = document.getElementById('amountInput');
@@ -307,34 +170,20 @@
             amountInput.value = '';
             descriptionInput.value = '';
 
-            if (type === 'income') {
-                titleEl.textContent = 'הוספת הכנסה';
-                titleEl.classList.remove('text-red-600');
-                titleEl.classList.add('text-green-600');
-            } else {
-                titleEl.textContent = 'הוספת הוצאה';
-                titleEl.classList.remove('text-green-600');
-                titleEl.classList.add('text-red-600');
-            }
+            titleEl.textContent = type === 'income' ? 'הוספת הכנסה' : 'הוספת הוצאה';
+            titleEl.className = type === 'income' ? 'text-green-600' : 'text-red-600';
 
             modal.dataset.type = type;
-        }
+        };
 
-        // סגירת מודאל
-        function closeModal() {
-            const modal = document.getElementById('transactionModal');
-            modal.classList.remove('flex');
-            modal.classList.add('hidden');
-        }
+        window.closeModal = () => {
+            document.getElementById('transactionModal').classList.replace('flex', 'hidden');
+        };
 
-        // שמירת עסקה
-        function saveTransaction() {
-            const amountInput = document.getElementById('amountInput');
-            const descriptionInput = document.getElementById('descriptionInput');
+        window.saveTransaction = async () => {
+            const amount = parseFloat(document.getElementById('amountInput').value);
+            const description = document.getElementById('descriptionInput').value.trim();
             const type = document.getElementById('transactionModal').dataset.type;
-
-            const amount = parseFloat(amountInput.value);
-            const description = descriptionInput.value.trim();
 
             if (!amount) {
                 alert('אנא הזן סכום');
@@ -357,21 +206,17 @@
             balance += type === 'income' ? amount : -amount;
 
             updateUI(balance, transactions);
-            saveUserData(balance, transactions);
+            await saveUserData(balance, transactions);
             closeModal();
-        }
+        };
 
-        // עדכון ממשק משתמש
         function updateUI(newBalance, newTransactions) {
             balance = newBalance;
             transactions = newTransactions;
 
-            const balanceEl = document.getElementById('balance');
-            const transactionsEl = document.getElementById('transactions');
-
-            balanceEl.textContent = `${balance} ₪`;
+            document.getElementById('balance').textContent = `${balance} ₪`;
             
-            transactionsEl.innerHTML = transactions.map(t => `
+            document.getElementById('transactions').innerHTML = transactions.map(t => `
                 <li class="flex justify-between p-2 rounded-lg ${t.type === 'income' ? 'bg-green-100' : 'bg-red-100'}">
                     <div class="flex flex-col">
                         <span class="text-gray-800">${t.description || ''}</span>
@@ -386,7 +231,6 @@
             updateChart();
         }
 
-        // עדכון גרף
         function updateChart() {
             const ctx = document.getElementById('chartArea').getContext('2d');
             
@@ -421,8 +265,8 @@
             });
         }
 
-        // מאזין למצב התחברות
-        auth.onAuthStateChanged((user) => {
+        // Auth state observer
+        onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
                 switchToApp();
@@ -432,12 +276,13 @@
             }
         });
 
-        // מאזיני אירועים
-        document.getElementById('loginBtn').addEventListener('click', login);
-        document.getElementById('registerBtn').addEventListener('click', register);
-        document.getElementById('googleLoginBtn').addEventListener('click', loginWithGoogle);
-        document.getElementById('incomeBtn').addEventListener('click', () => openModal('income'));
-        document.getElementById('expenseBtn').addEventListener('click', () => openModal('expense'));
+        // Expose functions to window
+        window.currentUser = currentUser;
+        window.balance = balance;
+        window.transactions = transactions;
     </script>
-</body>
-</html>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+</head>
+<!-- שאר ה-HTML נשאר זהה -->
