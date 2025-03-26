@@ -3,7 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <title>מנהל כספים - מאת עמית מטיאס</title>
-    <!-- עדכון לגרסה המודולרית של Firebase -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <!-- קונטיינר התחברות -->
+    <div id="loginContainer" class="container mx-auto max-w-md bg-white rounded-xl shadow-2xl p-6">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-blue-600">מנהל כספים</h1>
+            <p class="text-sm text-gray-500 mt-1">התחברות</p>
+        </div>
+        
+        <div class="space-y-4">
+            <input id="emailInput" type="email" placeholder="אימייל" 
+                   class="w-full p-3 border rounded-lg text-right">
+            <input id="passwordInput" type="password" placeholder="סיסמה" 
+                   class="w-full p-3 border rounded-lg text-right">
+            
+            <div class="flex flex-col space-y-4">
+                <button id="loginBtn" 
+                        class="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600">
+                    התחבר
+                </button>
+                <button id="registerBtn" 
+                        class="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600">
+                    הירשם
+                </button>
+                <button id="googleLoginBtn" 
+                        class="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 flex items-center justify-center">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google-icon.svg" alt="Google logo" class="w-6 h-6 mr-2">
+                    התחבר עם גוגל
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- קונטיינר אפליקציה -->
+    <div id="appContainer" class="container mx-auto max-w-md bg-white rounded-xl shadow-2xl p-6 hidden">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-blue-600">מנהל כספים</h1>
+            <p id="userEmail" class="text-sm text-gray-500 mt-1"></p>
+            <button onclick="logout()" 
+                    class="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-lg text-sm">
+                התנתק
+            </button>
+        </div>
+        
+        <div class="mb-6">
+            <div id="balance" class="text-center text-4xl font-extrabold text-green-600">0 ₪</div>
+        </div>
+
+        <div class="flex space-x-4 mb-6">
+            <button id="incomeBtn" onclick="openModal('income')" class="flex-1 bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 transition">
+                <span class="text-xl">➕ הכנסה</span>
+            </button>
+            <button id="expenseBtn" onclick="openModal('expense')" class="flex-1 bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition">
+                <span class="text-xl">➖ הוצאה</span>
+            </button>
+        </div>
+
+        <div class="bg-gray-100 rounded-lg p-4">
+            <h2 class="text-xl font-bold mb-4 text-gray-700">היסטוריית תנועות</h2>
+            <ul id="transactions" class="space-y-2 max-h-64 overflow-y-auto"></ul>
+        </div>
+
+        <canvas id="chartArea" class="mt-6 w-full"></canvas>
+    </div>
+
+    <!-- מודאל עסקה -->
+    <div id="transactionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-6 w-96">
+            <h2 id="modalTitle" class="text-2xl font-bold mb-4"></h2>
+            <input id="amountInput" type="number" placeholder="סכום" 
+                   class="w-full p-3 border rounded-lg mb-4 text-right">
+            <input id="descriptionInput" type="text" placeholder="תיאור (אופציונלי)" 
+                   class="w-full p-3 border rounded-lg mb-4 text-right">
+            <div class="flex space-x-4">
+                <button onclick="saveTransaction()" 
+                        class="flex-1 bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600">
+                    שמור
+                </button>
+                <button onclick="closeModal()" 
+                        class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-400">
+                    ביטול
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
@@ -147,12 +235,12 @@
         }
 
         // UI functions
-        function switchToLogin() {
+        window.switchToLogin = () => {
             document.getElementById('loginContainer').classList.remove('hidden');
             document.getElementById('appContainer').classList.add('hidden');
         }
 
-        function switchToApp() {
+        window.switchToApp = () => {
             document.getElementById('loginContainer').classList.add('hidden');
             document.getElementById('appContainer').classList.remove('hidden');
             document.getElementById('userEmail').textContent = currentUser.email;
@@ -171,7 +259,7 @@
             descriptionInput.value = '';
 
             titleEl.textContent = type === 'income' ? 'הוספת הכנסה' : 'הוספת הוצאה';
-            titleEl.className = type === 'income' ? 'text-green-600' : 'text-red-600';
+            titleEl.className = `text-2xl font-bold mb-4 ${type === 'income' ? 'text-green-600' : 'text-red-600'}`;
 
             modal.dataset.type = type;
         };
@@ -265,6 +353,11 @@
             });
         }
 
+        // Add event listeners
+        document.getElementById('loginBtn').addEventListener('click', window.login);
+        document.getElementById('registerBtn').addEventListener('click', window.register);
+        document.getElementById('googleLoginBtn').addEventListener('click', window.loginWithGoogle);
+
         // Auth state observer
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -275,14 +368,6 @@
                 switchToLogin();
             }
         });
-
-        // Expose functions to window
-        window.currentUser = currentUser;
-        window.balance = balance;
-        window.transactions = transactions;
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
-</head>
-<!-- שאר ה-HTML נשאר זהה -->
+</body>
+</html>
