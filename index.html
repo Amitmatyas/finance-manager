@@ -22,19 +22,16 @@
                    class="w-full p-3 border rounded-lg text-right">
             
             <div class="flex flex-col space-y-4">
-                <!-- כפתור התחברות רגיל -->
                 <button id="loginBtn" 
                         class="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600">
                     התחבר
                 </button>
 
-                <!-- כפתור הרשמה -->
                 <button id="registerBtn" 
                         class="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600">
                     הירשם
                 </button>
 
-                <!-- כפתור התחברות עם גוגל -->
                 <button id="googleLoginBtn" 
                         class="w-full bg-purple-700 text-white py-3 rounded-lg hover:bg-purple-800 flex items-center justify-center gap-4 font-semibold">
                     התחבר עם
@@ -59,21 +56,30 @@
         <div class="text-center mb-6">
             <h1 class="text-3xl font-bold text-blue-600">מנהל כספים</h1>
             <p id="userEmail" class="text-sm text-gray-500 mt-1"></p>
-            <button onclick="logout()" 
-                    class="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-lg text-sm">
-                התנתק
-            </button>
+            <div class="absolute top-4 left-4 flex gap-2">
+                <button onclick="showHistory()" 
+                        class="bg-blue-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-600">
+                    היסטוריה
+                </button>
+                <button onclick="logout()" 
+                        class="bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600">
+                    התנתק
+                </button>
+            </div>
         </div>
         
         <div class="mb-6">
+            <div id="currentDate" class="text-center text-sm text-gray-500 mb-2"></div>
             <div id="balance" class="text-center text-4xl font-extrabold text-green-600">0 ₪</div>
         </div>
 
         <div class="flex space-x-4 mb-6">
-            <button id="incomeBtn" onclick="openModal('income')" class="flex-1 bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 transition">
+            <button id="incomeBtn" onclick="openModal('income')" 
+                    class="flex-1 bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 transition">
                 <span class="text-xl">➕ הכנסה</span>
             </button>
-            <button id="expenseBtn" onclick="openModal('expense')" class="flex-1 bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition">
+            <button id="expenseBtn" onclick="openModal('expense')" 
+                    class="flex-1 bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition">
                 <span class="text-xl">➖ הוצאה</span>
             </button>
         </div>
@@ -128,368 +134,7 @@
             </div>
         </div>
     </div>
-
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
-        import { 
-            getAuth, 
-            signInWithEmailAndPassword, 
-            createUserWithEmailAndPassword, 
-            signInWithPopup, 
-            GoogleAuthProvider, 
-            signOut, 
-            onAuthStateChanged,
-            sendPasswordResetEmail
-        } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
-        import { getFirestore, doc, setDoc, getDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
-
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyCtlCl3Mnxr22HpHe3QaHwizNL4VNOdlGc",
-            authDomain: "finnance-manger.firebaseapp.com",
-            projectId: "finnance-manger",
-            storageBucket: "finnance-manger.firebasestorage.app",
-            messagingSenderId: "341045979158",
-            appId: "1:341045979158:web:57c180406d33d5b6a76d37",
-            measurementId: "G-G1HVDTTG6K"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const googleProvider = new GoogleAuthProvider();
-
-        let currentUser = null;
-        let balance = 0;
-        let transactions = [];
-        let chart = null;
-
-        // Reset Password Functions
-        window.resetPassword = () => {
-            document.getElementById('resetPasswordModal').classList.remove('hidden');
-            document.getElementById('resetPasswordModal').classList.add('flex');
-        };
-
-        window.closeResetModal = () => {
-            document.getElementById('resetPasswordModal').classList.add('hidden');
-            document.getElementById('resetPasswordModal').classList.remove('flex');
-            document.getElementById('resetEmail').value = '';
-        };
-
-        window.sendResetEmail = async () => {
-            const email = document.getElementById('resetEmail').value;
-            
-            if (!email) {
-                alert('נא להזין כתובת דוא"ל');
-                return;
-            }
-
-            try {
-                await sendPasswordResetEmail(auth, email);
-                alert('קישור לאיפוס סיסמה נשלח לדוא"ל שלך');
-                closeResetModal();
-            } catch (error) {
-                console.error('שגיאה באיפוס סיסמה:', error);
-                alert('שגיאה באיפוס סיסמה. נא לנסות שוב מאוחר יותר.');
-            }
-        };
-
-        // Login with Google
-        window.loginWithGoogle = async () => {
-            try {
-                const result = await signInWithPopup(auth, googleProvider);
-                currentUser = result.user;
-                switchToApp();
-                
-                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-                if (!userDoc.exists()) {
-                    await initializeUserData();
-                } else {
-                    await loadUserData();
-                }
-            } catch (error) {
-                console.error('Google login error:', error);
-                alert('שגיאה בהתחברות עם Google: ' + error.message);
-            }
-        };
-
-        // Regular login
-        window.login = async () => {
-            const email = document.getElementById('emailInput').value;
-            const password = document.getElementById('passwordInput').value;
-
-            if (!email || !password) {
-                alert('אנא הזן אימייל וסיסמה');
-                return;
-            }
-
-            try {
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                currentUser = userCredential.user;
-                switchToApp();
-                await loadUserData();
-            } catch (error) {
-                console.error('Login error:', error);
-                alert('שגיאה בהתחברות: ' + error.message);
-            }
-        };
-
-        // Register
-        window.register = async () => {
-            const email = document.getElementById('emailInput').value;
-            const password = document.getElementById('passwordInput').value;
-
-            if (!email || !password) {
-                alert('אנא הזן אימייל וסיסמה');
-                return;
-            }
-
-            try {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                currentUser = userCredential.user;
-                switchToApp();
-                await initializeUserData();
-            } catch (error) {
-                console.error('Registration error:', error);
-                alert('שגיאה בהרשמה: ' + error.message);
-            }
-        };
-
-        // Logout
-        window.logout = async () => {
-            try {
-                await signOut(auth);
-                switchToLogin();
-            } catch (error) {
-                console.error('Logout error:', error);
-                alert('שגיאה בהתנתקות: ' + error.message);
-            }
-        };
-
-        // Initialize user data
-        async function initializeUserData() {
-            try {
-                await setDoc(doc(db, 'users', currentUser.uid), {
-                    balance: 0,
-                    transactions: []
-                });
-                updateUI(0, []);
-            } catch (error) {
-                console.error('Error initializing user data:', error);
-                alert('שגיאה באתחול נתוני משתמש: ' + error.message);
-            }
-        }
-
-        // Load user data
-        async function loadUserData() {
-            try {
-                const docSnap = await getDoc(doc(db, 'users', currentUser.uid));
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    updateUI(data.balance || 0, data.transactions || []);
-                } else {
-                    await initializeUserData();
-                }
-            } catch (error) {
-                console.error('Error loading user data:', error);
-                alert('שגיאה בטעינת נתונים: ' + error.message);
-            }
-        }
-
-        // Save user data
-        async function saveUserData(newBalance, newTransactions) {
-            try {
-                await updateDoc(doc(db, 'users', currentUser.uid), {
-                    balance: newBalance,
-                    transactions: newTransactions
-                });
-            } catch (error) {
-                console.error('Error saving user data:', error);
-                alert('שגיאה בשמירת נתונים: ' + error.message);
-            }
-        }
-
-        // UI functions
-        window.switchToLogin = () => {
-            document.getElementById('loginContainer').classList.remove('hidden');
-            document.getElementById('appContainer').classList.add('hidden');
-        }
-
-        window.switchToApp = () => {
-            document.getElementById('loginContainer').classList.add('hidden');
-            document.getElementById('appContainer').classList.remove('hidden');
-            document.getElementById('userEmail').textContent = currentUser.email;
-        }
-
-        window.openModal = (type) => {
-            const modal = document.getElementById('transactionModal');
-            const titleEl = document.getElementById('modalTitle');
-            const amountInput = document.getElementById('amountInput');
-            const descriptionInput = document.getElementById('descriptionInput');
-
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            
-            amountInput.value = '';
-            descriptionInput.value = '';
-
-            titleEl.textContent = type === 'income' ? 'הוספת הכנסה' : 'הוספת הוצאה';
-            titleEl.className = `text-2xl font-bold mb-4 ${type === 'income' ? 'text-green-600' : 'text-red-600'}`;
-
-            modal.dataset.type = type;
-        };
-
-        window.closeModal = () => {
-            document.getElementById('transactionModal').classList.replace('flex', 'hidden');
-        };
-
-        window.saveTransaction = async () => {
-            const amount = parseFloat(document.getElementById('amountInput').value);
-            const description = document.getElementById('descriptionInput').value.trim();
-            const type = document.getElementById('transactionModal').dataset.type;
-
-            if (!amount) {
-                alert('אנא הזן סכום');
-                return;
-            }
-
-            if (type === 'expense' && amount > balance) {
-                alert('אין מספיק כסף בחשבון');
-                return;
-            }
-
-            const transaction = {
-                type,
-                amount,
-                description: description || null,
-                date: new Date().toISOString()
-            };
-
-            transactions.unshift(transaction);
-            balance += type === 'income' ? amount : -amount;
-
-            updateUI(balance, transactions);
-            await saveUserData(balance, transactions);
-            closeModal();
-        };
-
-        function updateUI(newBalance, newTransactions) {
-            balance = newBalance;
-            transactions = newTransactions;
-
-            document.getElementById('balance').textContent = `${balance} ₪`;
-            
-            document.getElementById('transactions').innerHTML = transactions.map(t => `
-                <li class="flex justify-between p-2 rounded-lg ${t.type === 'income' ? 'bg-green-100' : 'bg-red-100'}">
-                    <div class="flex flex-col">
-                        <span class="text-gray-800">${t.description || ''}</span>
-                        <span class="text-xs text-gray-500">${new Date(t.date).toLocaleString()}</span>
-                    </div>
-                    <span class="${t.type === 'income' ? 'text-green-600' : 'text-red-600'}">
-                        ${t.type === 'income' ? '+' : '-'} ${t.amount} ₪
-                    </span>
-                </li>
-            `).join('');
-
-            updateChart();
-        }
-
-        function updateChart() {
-            const ctx = document.getElementById('chartArea').getContext('2d');
-            
-            if (chart) chart.destroy();
-
-            const incomeData = transactions
-                .filter(t => t.type === 'income')
-                .map(t => t.amount);
-
-            const expenseData = transactions
-                .filter(t => t.type === 'expense')
-                .map(t => t.amount);
-
-            chart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['הכנסות', 'הוצאות'],
-                    datasets: [{
-                        data: [
-                            incomeData.reduce((a, b) => a + b, 0),
-                            expenseData.reduce((a, b) => a + b, 0)
-                        ],
-                        backgroundColor: ['#10B981', '#EF4444']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { display: false }
-                    }
-                }
-            });
-        }
-
-        // Add event listeners
-        document.getElementById('loginBtn').addEventListener('click', window.login);
-        document.getElementById('registerBtn').addEventListener('click', window.register);
-        document.getElementById('googleLoginBtn').addEventListener('click', window.loginWithGoogle);
-
-        // Auth state observer
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                switchToApp();
-                loadUserData();
-            } else {
-                switchToLogin();
-            }
-        });
-    </script>
-</body>
-</html>
-    <!-- מודאל עסקה -->
-    <div id="transactionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-xl p-6 w-96">
-            <h2 id="modalTitle" class="text-2xl font-bold mb-4"></h2>
-            <input id="amountInput" type="number" placeholder="סכום" 
-                   class="w-full p-3 border rounded-lg mb-4 text-right">
-            <input id="descriptionInput" type="text" placeholder="תיאור (אופציונלי)" 
-                   class="w-full p-3 border rounded-lg mb-4 text-right">
-            <div class="flex space-x-4">
-                <button onclick="saveTransaction()" 
-                        class="flex-1 bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600">
-                    שמור
-                </button>
-                <button onclick="closeModal()" 
-                        class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-400">
-                    ביטול
-                </button>
-            </div>
-        </div>
-    </div>
-    <!-- מודאל איפוס סיסמה -->
-    <div id="resetPasswordModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white p-6 rounded-xl w-96">
-            <h2 class="text-2xl font-bold mb-4">איפוס סיסמה</h2>
-            <p class="text-gray-600 mb-4">הזן את כתובת הדוא"ל שלך ונשלח לך קישור לאיפוס הסיסמה</p>
-            <input type="email" 
-                   id="resetEmail" 
-                   class="w-full p-3 border rounded-lg mb-4 text-right" 
-                   placeholder="כתובת דוא״ל">
-            <div class="flex space-x-4">
-                <button onclick="closeResetModal()" 
-                        class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-400">
-                    ביטול
-                </button>
-                <button onclick="sendResetEmail()" 
-                        class="flex-1 bg-black text-white py-3 rounded-lg hover:bg-gray-800">
-                    שלח קישור
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <script type="module">
+        <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
         import { 
             getAuth, 
@@ -531,6 +176,36 @@
         };
         let historicalData = {};
 
+        // פונקציות איפוס סיסמה
+        window.resetPassword = () => {
+            document.getElementById('resetPasswordModal').classList.remove('hidden');
+            document.getElementById('resetPasswordModal').classList.add('flex');
+        };
+
+        window.closeResetModal = () => {
+            document.getElementById('resetPasswordModal').classList.add('hidden');
+            document.getElementById('resetPasswordModal').classList.remove('flex');
+            document.getElementById('resetEmail').value = '';
+        };
+
+        window.sendResetEmail = async () => {
+            const email = document.getElementById('resetEmail').value;
+            
+            if (!email) {
+                alert('נא להזין כתובת דוא"ל');
+                return;
+            }
+
+            try {
+                await sendPasswordResetEmail(auth, email);
+                alert('קישור לאיפוס סיסמה נשלח לדוא"ל שלך');
+                closeResetModal();
+            } catch (error) {
+                console.error('שגיאה באיפוס סיסמה:', error);
+                alert('שגיאה באיפוס סיסמה. נא לנסות שוב מאוחר יותר.');
+            }
+        };
+
         // פונקציית עזר לקבלת שם החודש בעברית
         function getHebrewMonthName(date) {
             return date.toLocaleString('he-IL', { month: 'long' });
@@ -545,7 +220,8 @@
             });
             document.getElementById('currentDate').textContent = hebrewDate;
         }
-                // פונקציה לבדיקת איפוס חודשי
+
+        // פונקציה לבדיקת איפוס חודשי
         async function checkAndResetMonthlyData() {
             const now = new Date();
             const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -555,12 +231,10 @@
                 const userData = userDoc.data();
                 const lastAccess = userData?.lastAccess?.toDate() || new Date();
                 
-                // בדוק אם זה חודש חדש
                 if (lastAccess.getMonth() !== now.getMonth() || lastAccess.getFullYear() !== now.getFullYear()) {
                     const lastMonthKey = `${lastAccess.getFullYear()}-${String(lastAccess.getMonth() + 1).padStart(2, '0')}`;
                     
                     if (currentMonthData.transactions.length > 0) {
-                        // שמור את הנתונים הנוכחיים בהיסטוריה
                         await updateDoc(doc(db, 'users', currentUser.uid), {
                             [`history.${lastMonthKey}`]: {
                                 balance: currentMonthData.balance,
@@ -574,7 +248,6 @@
                             lastAccess: now
                         });
 
-                        // אפס את הנתונים הנוכחיים
                         currentMonthData = {
                             balance: 0,
                             transactions: []
@@ -586,7 +259,6 @@
                         updateUI(0, []);
                     }
                 } else {
-                    // עדכן רק את זמן הגישה האחרון
                     await updateDoc(doc(db, 'users', currentUser.uid), {
                         lastAccess: now
                     });
@@ -606,7 +278,6 @@
             
             let historyHtml = '<h2 class="text-2xl font-bold mb-4">היסטוריית חודשים</h2>';
             
-            // מיין את החודשים בסדר יורד
             const sortedMonths = Object.keys(historicalData).sort().reverse();
             
             if (sortedMonths.length === 0) {
@@ -655,7 +326,63 @@
             document.body.appendChild(modal);
         };
 
-        // עדכון פונקציות קיימות
+        // פונקציות UI
+        function updateUI(newBalance, newTransactions) {
+            balance = newBalance;
+            transactions = newTransactions;
+
+            document.getElementById('balance').textContent = `${balance} ₪`;
+            
+            document.getElementById('transactions').innerHTML = transactions.map(t => `
+                <li class="flex justify-between p-2 rounded-lg ${t.type === 'income' ? 'bg-green-100' : 'bg-red-100'}">
+                    <div class="flex flex-col">
+                        <span class="text-gray-800">${t.description || ''}</span>
+                        <span class="text-xs text-gray-500">${new Date(t.date).toLocaleString('he-IL')}</span>
+                    </div>
+                    <span class="${t.type === 'income' ? 'text-green-600' : 'text-red-600'}">
+                        ${t.type === 'income' ? '+' : '-'} ${t.amount} ₪
+                    </span>
+                </li>
+            `).join('');
+
+            updateChart();
+        }
+
+        function updateChart() {
+            const ctx = document.getElementById('chartArea').getContext('2d');
+            
+            if (chart) chart.destroy();
+
+            const incomeData = transactions
+                .filter(t => t.type === 'income')
+                .map(t => t.amount);
+
+            const expenseData = transactions
+                .filter(t => t.type === 'expense')
+                .map(t => t.amount);
+
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['הכנסות', 'הוצאות'],
+                    datasets: [{
+                        data: [
+                            incomeData.reduce((a, b) => a + b, 0),
+                            expenseData.reduce((a, b) => a + b, 0)
+                        ],
+                        backgroundColor: ['#10B981', '#EF4444']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        // פונקציות נתונים
         async function loadUserData() {
             try {
                 const docSnap = await getDoc(doc(db, 'users', currentUser.uid));
@@ -710,7 +437,7 @@
             }
         }
 
-        // שאר הפונקציות הקיימות נשארות ללא שינוי
+        // פונקציות אימות
         window.login = async () => {
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
@@ -731,7 +458,120 @@
             }
         };
 
-        // [שאר הקוד הקיים נשאר ללא שינוי...]
+        window.register = async () => {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+
+            if (!email || !password) {
+                alert('אנא הזן אימייל וסיסמה');
+                return;
+            }
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                currentUser = userCredential.user;
+                switchToApp();
+                await initializeUserData();
+            } catch (error) {
+                console.error('Registration error:', error);
+                alert('שגיאה בהרשמה: ' + error.message);
+            }
+        };
+
+        window.loginWithGoogle = async () => {
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                currentUser = result.user;
+                switchToApp();
+                
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (!userDoc.exists()) {
+                    await initializeUserData();
+                } else {
+                    await loadUserData();
+                }
+            } catch (error) {
+                console.error('Google login error:', error);
+                alert('שגיאה בהתחברות עם Google: ' + error.message);
+            }
+        };
+
+        window.logout = async () => {
+            try {
+                await signOut(auth);
+                switchToLogin();
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert('שגיאה בהתנתקות: ' + error.message);
+            }
+        };
+
+        // פונקציות מעבר בין מסכים
+        window.switchToLogin = () => {
+            document.getElementById('loginContainer').classList.remove('hidden');
+            document.getElementById('appContainer').classList.add('hidden');
+            document.getElementById('emailInput').value = '';
+            document.getElementById('passwordInput').value = '';
+        };
+
+        window.switchToApp = () => {
+            document.getElementById('loginContainer').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+            document.getElementById('userEmail').textContent = currentUser.email;
+        };
+
+        // פונקציות מודאל
+        window.openModal = (type) => {
+            const modal = document.getElementById('transactionModal');
+            const titleEl = document.getElementById('modalTitle');
+            const amountInput = document.getElementById('amountInput');
+            const descriptionInput = document.getElementById('descriptionInput');
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            amountInput.value = '';
+            descriptionInput.value = '';
+
+            titleEl.textContent = type === 'income' ? 'הוספת הכנסה' : 'הוספת הוצאה';
+            titleEl.className = `text-2xl font-bold mb-4 ${type === 'income' ? 'text-green-600' : 'text-red-600'}`;
+
+            modal.dataset.type = type;
+        };
+
+        window.closeModal = () => {
+            document.getElementById('transactionModal').classList.replace('flex', 'hidden');
+        };
+
+        window.saveTransaction = async () => {
+            const amount = parseFloat(document.getElementById('amountInput').value);
+            const description = document.getElementById('descriptionInput').value.trim();
+            const type = document.getElementById('transactionModal').dataset.type;
+
+            if (!amount) {
+                alert('אנא הזן סכום');
+                return;
+            }
+
+            if (type === 'expense' && amount > balance) {
+                alert('אין מספיק כסף בחשבון');
+                return;
+            }
+
+            const transaction = {
+                type,
+                amount,
+                description: description || null,
+                date: new Date().toISOString()
+            };
+
+            transactions.unshift(transaction);
+            balance += type === 'income' ? amount : -amount;
+
+            updateUI(balance, transactions);
+            await saveUserData(balance, transactions);
+            closeModal();
+        };
 
         // Event Listeners
         document.getElementById('loginBtn').addEventListener('click', window.login);
