@@ -536,6 +536,8 @@
     window.saveTransaction = async () => {
         const amount = parseFloat(document.getElementById('amountInput').value);
         const description = document.getElementById('descriptionInput').value;
+        const CURRENT_TIME = "2025-03-26 21:38:57";
+        const USER_LOGIN = "Amitmatyas";
 
         if (!amount || isNaN(amount)) {
             alert('אנא הזן סכום תקין');
@@ -546,7 +548,7 @@
             type: currentTransactionType,
             amount: Math.abs(amount),
             description,
-            date: new Date().toISOString()
+            date: CURRENT_TIME
         };
 
         const newTransactions = [...transactions, transaction];
@@ -555,26 +557,35 @@
             : balance - amount;
 
         try {
-            // שליחת מייל על העסקה
-            await onTransactionDetected({
-                email: currentUser.email,
-                displayName: currentUser.displayName || 'משתמש יקר'
-            }, {
-                amount: transaction.amount,
-                description: transaction.description,
-                type: transaction.type,
-                newBalance: newBalance
-            });
-
+            // קודם נשמור את הנתונים
             await saveUserData(newBalance, newTransactions);
+            
+            // אחר כך ננסה לשלוח מייל
+            try {
+                await onTransactionDetected({
+                    email: currentUser.email,
+                    displayName: USER_LOGIN,
+                    username: USER_LOGIN
+                }, {
+                    amount: transaction.amount,
+                    description: transaction.description || 'ללא תיאור',
+                    type: transaction.type,
+                    newBalance: newBalance,
+                    local_time: CURRENT_TIME,
+                    user_login: USER_LOGIN
+                });
+            } catch (emailError) {
+                console.error('שגיאה בשליחת המייל:', emailError);
+                // נמשיך הלאה גם אם שליחת המייל נכשלה
+            }
+
             updateUI(newBalance, newTransactions);
             closeModal();
         } catch (error) {
             console.error('Error saving transaction:', error);
-            alert('שגיאה בשמירת העסקה: ' + error.message);
+            alert('שגיאה בשמירת העסקה. נא לנסות שוב.');
         }
     };
-
     // פונקציית התנתקות
     window.logout = async () => {
         try {
