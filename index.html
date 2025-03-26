@@ -57,7 +57,6 @@
             </div>
         </div>
     </div>
-
     <!-- קונטיינר אפליקציה -->
     <div id="appContainer" class="container mx-auto max-w-md bg-white rounded-xl shadow-2xl p-6 hidden">
         <div class="text-center mb-6">
@@ -141,7 +140,6 @@
             </div>
         </div>
     </div>
-
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
         import { 
@@ -460,11 +458,16 @@
                 currentUser = userCredential.user;
                 
                 // שליחת מייל התחברות
-                onLoginDetected({
-                    email: currentUser.email,
-                    displayName: currentUser.displayName || 'משתמש יקר',
-                    username: currentUser.email.split('@')[0]
-                });
+                try {
+                    await onLoginDetected({
+                        email: currentUser.email,
+                        displayName: currentUser.displayName || 'משתמש יקר',
+                        username: currentUser.email.split('@')[0]
+                    });
+                    console.log('מייל התחברות נשלח בהצלחה');
+                } catch (emailError) {
+                    console.error('שגיאה בשליחת מייל התחברות:', emailError);
+                }
                 
                 switchToApp();
                 await loadUserData();
@@ -511,114 +514,3 @@
                 alert('שגיאה בהתחברות עם Google: ' + error.message);
             }
         };
-
-        window.logout = async () => {
-            try {
-                await signOut(auth);
-                switchToLogin();
-            } catch (error) {
-                console.error('Logout error:', error);
-                alert('שגיאה בהתנתקות: ' + error.message);
-            }
-        };
-
-        // פונקציות מעבר בין מסכים
-        window.switchToLogin = () => {
-            document.getElementById('loginContainer').classList.remove('hidden');
-            document.getElementById('appContainer').classList.add('hidden');
-            document.getElementById('emailInput').value = '';
-            document.getElementById('passwordInput').value = '';
-        };
-
-        window.switchToApp = () => {
-            document.getElementById('loginContainer').classList.add('hidden');
-            document.getElementById('appContainer').classList.remove('hidden');
-            document.getElementById('userEmail').textContent = currentUser.email;
-        };
-
-        // פונקציות מודאל
-        window.openModal = (type) => {
-            const modal = document.getElementById('transactionModal');
-            const titleEl = document.getElementById('modalTitle');
-            const amountInput = document.getElementById('amountInput');
-            const descriptionInput = document.getElementById('descriptionInput');
-
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            
-            amountInput.value = '';
-            descriptionInput.value = '';
-
-            titleEl.textContent = type === 'income' ? 'הוספת הכנסה' : 'הוספת הוצאה';
-            titleEl.className = `text-2xl font-bold mb-4 ${type === 'income' ? 'text-green-600' : 'text-red-600'}`;
-
-            modal.dataset.type = type;
-        };
-
-        window.closeModal = () => {
-            document.getElementById('transactionModal').classList.replace('flex', 'hidden');
-        };
-
-        window.saveTransaction = async () => {
-            const amount = parseFloat(document.getElementById('amountInput').value);
-            const description = document.getElementById('descriptionInput').value.trim();
-            const type = document.getElementById('transactionModal').dataset.type;
-
-            if (!amount) {
-                alert('אנא הזן סכום');
-                return;
-            }
-
-            if (type === 'expense' && amount > balance) {
-                alert('אין מספיק כסף בחשבון');
-                return;
-            }
-
-            const transaction = {
-                type,
-                amount,
-                description: description || null,
-                date: new Date().toISOString()
-            };
-
-            transactions.unshift(transaction);
-            balance += type === 'income' ? amount : -amount;
-
-            // שליחת מייל עסקה
-            onTransactionDetected(
-                {
-                    email: currentUser.email,
-                    displayName: currentUser.displayName || 'משתמש יקר',
-                    username: currentUser.email.split('@')[0]
-                },
-                {
-                    amount: amount,
-                    description: description || '',
-                    newBalance: balance,
-                    type: type
-                }
-            );
-
-            updateUI(balance, transactions);
-            await saveUserData(balance, transactions);
-            closeModal();
-        };
-
-        // Event Listeners
-        document.getElementById('loginBtn').addEventListener('click', window.login);
-        document.getElementById('registerBtn').addEventListener('click', window.register);
-        document.getElementById('googleLoginBtn').addEventListener('click', window.loginWithGoogle);
-
-        // Auth state observer
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                switchToApp();
-                loadUserData();
-            } else {
-                switchToLogin();
-            }
-        });
-    </script>
-</body>
-</html>
