@@ -514,3 +514,48 @@
                 alert('שגיאה בהתחברות עם Google: ' + error.message);
             }
         };
+        // מאזיני אירועים לכפתורים
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            window.login();
+        });
+
+        document.getElementById('registerBtn').addEventListener('click', () => {
+            window.register();
+        });
+
+        document.getElementById('googleLoginBtn').addEventListener('click', () => {
+            window.loginWithGoogle();
+        });
+
+        // מאזיני אירועים למקשי Enter בשדות הקלט
+        document.getElementById('emailInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('passwordInput').focus();
+            }
+        });
+
+        document.getElementById('passwordInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                window.login();
+            }
+        });
+
+        // פונקציה להחלפה בין מסכים
+        function switchToApp() {
+            document.getElementById('loginContainer').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+            document.getElementById('userEmail').textContent = currentUser.email;
+        }
+
+        // בדיקת מצב התחברות בטעינת הדף
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                switchToApp();
+                loadUserData();
+            }
+        });
+
+    </script>
+</body>
+</html>
