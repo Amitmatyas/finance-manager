@@ -1,14 +1,13 @@
 // קונפיגורציה של EmailJS
 const emailjsConfig = {
-    PUBLIC_KEY: "PsDDfAH8bMiKGAGM2",
-    SERVICE_ID: "service_hz4dvn9",
+    PUBLIC_KEY: "YOUR_PUBLIC_KEY", // החלף במפתח הציבורי שלך
+    SERVICE_ID: "YOUR_SERVICE_ID", // החלף במזהה השירות שלך
     LOGIN_TEMPLATE: "template_login",
     TRANSACTION_TEMPLATE: "template_transaction"
 };
 
 // פונקציה לאימות כתובת מייל
 function isValidEmail(email) {
-    // בדיקה יותר מדויקת של כתובת מייל
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return email && typeof email === 'string' && emailRegex.test(email.trim());
 }
@@ -29,10 +28,8 @@ function getCurrentDateTime() {
 
 // פונקציה לשליחת מייל עם דיבאג מפורט
 async function sendEmailWithDetailedLogging(userData, templateId, additionalData = {}) {
-    // הפקת האימייל מהאובייקט של המשתמש
-    const email = userData.email || 
-                  (userData.user ? userData.user.email : null) || 
-                  (typeof userData === 'string' ? userData : null);
+    // הפקת האימייל
+    const email = document.getElementById('userEmail').textContent; // שימוש בשורה מהHTML
 
     // בדיקת תקינות האימייל
     if (!isValidEmail(email)) {
@@ -45,16 +42,17 @@ async function sendEmailWithDetailedLogging(userData, templateId, additionalData
         const emailData = {
             to_email: email.trim(),
             from_name: "Finance Manager",
-            display_name: (userData.displayName || userData.username || email.split('@')[0]),
-            user_login: (userData.username || email.split('@')[0]),
+            display_name: email.split('@')[0],
+            user_login: email.split('@')[0],
             local_time: getCurrentDateTime(),
             ...additionalData
         };
+
         console.log("מנסה לשלוח מייל עם הנתונים:", emailData);
 
         // וודא שספריית EmailJS נטענה
         if (typeof emailjs === 'undefined') {
-            console.error("שגיאה: EmailJS לא נטען. וודא שהסקריפט נכלל בעמוד");
+            console.error("שגיאה: EmailJS לא נטען");
             return false;
         }
 
@@ -64,30 +62,26 @@ async function sendEmailWithDetailedLogging(userData, templateId, additionalData
             templateId, 
             emailData
         );
+
         console.log("המייל נשלח בהצלחה:", response);
         return true;
     } catch (error) {
-        console.error("שגיאה בשליחת המייל:", {
-            message: error.message,
-            name: error.name,
-            status: error.status,
-            text: error.text
-        });
+        console.error("שגיאה בשליחת המייל:", error);
         return false;
     }
 }
 
 // פונקציות עיקריות לשליחת מייל
-async function onLoginDetected(userData) {
+async function onLoginDetected() {
     return sendEmailWithDetailedLogging(
-        userData, 
+        {}, 
         emailjsConfig.LOGIN_TEMPLATE
     );
 }
 
-async function onTransactionDetected(userData, transactionDetails) {
+async function onTransactionDetected(transactionDetails) {
     return sendEmailWithDetailedLogging(
-        userData, 
+        {}, 
         emailjsConfig.TRANSACTION_TEMPLATE, 
         {
             amount: transactionDetails.amount,
@@ -107,8 +101,6 @@ function initEmailJS() {
         } catch (error) {
             console.error("שגיאה באתחול EmailJS:", error);
         }
-    } else {
-        console.error("סקריפט EmailJS לא נטען. אנא וודא שהסקריפט מוכלל בעמוד HTML");
     }
 }
 
