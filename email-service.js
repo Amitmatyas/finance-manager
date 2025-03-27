@@ -6,18 +6,12 @@ const emailjsConfig = {
     TRANSACTION_TEMPLATE: "template_transaction"
 };
 
-// פונקציה שמחזירה את התאריך והשעה הנוכחיים בפורמט הרצוי
+// פונקציה שמחזירה את התאריך והשעה הנוכחיים בפורמט UTC
 function getCurrentDateTime() {
     const now = new Date();
-    return now.toLocaleString('he-IL', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-    }).replace(/\./g, '-');
+    return now.toISOString()
+        .replace('T', ' ')
+        .split('.')[0];
 }
 
 // אתחול EmailJS
@@ -26,33 +20,38 @@ function getCurrentDateTime() {
     console.log("EmailJS initialized successfully");
 })();
 
-// פונקציה שמופעלת בעת התחברות
+// פונקציה לשליחת מייל בעת התחברות
 async function onLoginDetected(user) {
     try {
-        console.log("Attempting to send login email to:", user.email);
+        // קבלת כתובת IP של המשתמש
+        const ipResponse = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipResponse.json();
 
         const emailData = {
             to_email: user.email,
             name: user.displayName || 'משתמש יקר',
             local_time: getCurrentDateTime(),
             user_login: user.email.split('@')[0],
-            device_info: navigator.userAgent
+            device_info: navigator.userAgent,
+            ip_address: ipData.ip
         };
 
-        const response = await emailjs.send(emailjsConfig.SERVICE_ID, emailjsConfig.LOGIN_TEMPLATE, emailData);
+        const response = await emailjs.send(
+            emailjsConfig.SERVICE_ID,
+            emailjsConfig.LOGIN_TEMPLATE,
+            emailData
+        );
         console.log("Login email sent successfully:", response);
-        return response;
+        return true;
     } catch (error) {
         console.error("Failed to send login email:", error);
-        // לא נזרוק את השגיאה כדי שהתהליך ימשיך
+        return false;
     }
 }
 
-// פונקציה שמופעלת בעת ביצוע עסקה
+// פונקציה לשליחת מייל בעת ביצוע עסקה
 async function onTransactionDetected(user, transactionDetails) {
     try {
-        console.log("Attempting to send transaction email to:", user.email);
-
         const emailData = {
             to_email: user.email,
             name: user.displayName || 'משתמש יקר',
@@ -61,18 +60,22 @@ async function onTransactionDetected(user, transactionDetails) {
             amount: transactionDetails.amount,
             description: transactionDetails.description || 'ללא תיאור',
             new_balance: transactionDetails.newBalance,
-            transaction_type: transactionDetails.type === 'income' ? 'הכנסה' : 'הוצאה'
+            isIncome: transactionDetails.type === 'income'
         };
 
-        const response = await emailjs.send(emailjsConfig.SERVICE_ID, emailjsConfig.TRANSACTION_TEMPLATE, emailData);
+        const response = await emailjs.send(
+            emailjsConfig.SERVICE_ID,
+            emailjsConfig.TRANSACTION_TEMPLATE,
+            emailData
+        );
         console.log("Transaction email sent successfully:", response);
-        return response;
+        return true;
     } catch (error) {
         console.error("Failed to send transaction email:", error);
-        // לא נזרוק את השגיאה כדי שהתהליך ימשיך
+        return false;
     }
 }
 
-// חשוב - מייצא את הפונקציות לחלון הגלובלי
+// ייצוא הפונקציות
 window.onLoginDetected = onLoginDetected;
 window.onTransactionDetected = onTransactionDetected;
