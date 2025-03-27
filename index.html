@@ -244,6 +244,21 @@
             }
         };
 
+        // פונקציה לקבלת התאריך והשעה הנוכחיים
+        function getCurrentDateTime() {
+            const now = new Date();
+            now.setHours(now.getHours() + 2); // התאמה לאזור זמן ישראל
+            
+            const year = now.getUTCFullYear();
+            const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(now.getUTCDate()).padStart(2, '0');
+            const hours = String(now.getUTCHours()).padStart(2, '0');
+            const minutes = String(now.getUTCMinutes()).padStart(2, '0');
+            const seconds = String(now.getUTCSeconds()).padStart(2, '0');
+            
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        }
+
         // פונקציית שמירת עסקה
         window.saveTransaction = async () => {
             const amount = parseFloat(document.getElementById('amountInput').value);
@@ -254,11 +269,16 @@
                 return;
             }
 
+            if (!currentUser || !currentUser.email) {
+                alert('אנא התחבר מחדש למערכת');
+                return;
+            }
+
             const transaction = {
                 type: currentTransactionType,
                 amount: Math.abs(amount),
                 description,
-                date: "2025-03-27 18:53:15"
+                date: getCurrentDateTime()
             };
 
             const newTransactions = [...transactions, transaction];
@@ -274,9 +294,7 @@
                         amount: transaction.amount,
                         description: transaction.description || 'ללא תיאור',
                         type: transaction.type,
-                        newBalance: newBalance,
-                        local_time: "2025-03-27 18:53:15",
-                        user_login: "Amitmatyas"
+                        newBalance: newBalance
                     });
                 } catch (emailError) {
                     console.error('שגיאה בשליחת המייל:', emailError);
