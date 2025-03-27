@@ -57,6 +57,7 @@
             </div>
         </div>
     </div>
+
     <!-- קונטיינר אפליקציה -->
     <div id="appContainer" class="container mx-auto max-w-md bg-white rounded-xl shadow-2xl p-6 hidden">
         <div class="text-center mb-6">
@@ -140,513 +141,484 @@
             </div>
         </div>
     </div>
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
-    import { 
-        getAuth, 
-        signInWithEmailAndPassword, 
-        createUserWithEmailAndPassword, 
-        signInWithPopup, 
-        GoogleAuthProvider, 
-        signOut, 
-        onAuthStateChanged,
-        sendPasswordResetEmail
-    } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
-    import { getFirestore, doc, setDoc, getDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
 
-    // Firebase configuration
-    const firebaseConfig = {
-        apiKey: "AIzaSyCtlCl3Mnxr22HpHe3QaHwizNL4VNOdlGc",
-        authDomain: "finnance-manger.firebaseapp.com",
-        projectId: "finnance-manger",
-        storageBucket: "finnance-manger.firebasestorage.app",
-        messagingSenderId: "341045979158",
-        appId: "1:341045979158:web:57c180406d33d5b6a76d37",
-        measurementId: "G-G1HVDTTG6K"
-    };
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword, 
+            signInWithPopup, 
+            GoogleAuthProvider, 
+            signOut, 
+            onAuthStateChanged,
+            sendPasswordResetEmail
+        } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
 
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const googleProvider = new GoogleAuthProvider();
-
-    // גלובליים משתנים
-    let currentUser = null;
-    let balance = 0;
-    let transactions = [];
-    let chart = null;
-    let currentMonthData = {
-        balance: 0,
-        transactions: []
-    };
-    let historicalData = {};
-
-    // פונקציות איפוס סיסמה
-    window.resetPassword = () => {
-        document.getElementById('resetPasswordModal').classList.remove('hidden');
-        document.getElementById('resetPasswordModal').classList.add('flex');
-    };
-
-    window.closeResetModal = () => {
-        document.getElementById('resetPasswordModal').classList.add('hidden');
-        document.getElementById('resetPasswordModal').classList.remove('flex');
-        document.getElementById('resetEmail').value = '';
-    };
-
-    window.sendResetEmail = async () => {
-        const email = document.getElementById('resetEmail').value;
-        
-        if (!email) {
-            alert('נא להזין כתובת דוא"ל');
-            return;
-        }
-
-        try {
-            await sendPasswordResetEmail(auth, email);
-            alert('קישור לאיפוס סיסמה נשלח לדוא"ל שלך');
-            closeResetModal();
-        } catch (error) {
-            console.error('שגיאה באיפוס סיסמה:', error);
-            alert('שגיאה באיפוס סיסמה. נא לנסות שוב מאוחר יותר.');
-        }
-    };
-
-    // פונקציית עזר לקבלת שם החודש בעברית
-    function getHebrewMonthName(date) {
-        return date.toLocaleString('he-IL', { month: 'long' });
-    }
-
-    // פונקציה לעדכון התאריך הנוכחי
-    function updateCurrentDate() {
-        const now = new Date();
-        const hebrewDate = now.toLocaleString('he-IL', {
-            year: 'numeric',
-            month: 'long'
-        });
-        document.getElementById('currentDate').textContent = hebrewDate;
-    }
-
-    // פונקציה לבדיקת איפוס חודשי
-    async function checkAndResetMonthlyData() {
-        const now = new Date();
-        const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        
-        try {
-            const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-            const userData = userDoc.data();
-            const lastAccess = userData?.lastAccess?.toDate() || new Date();
-            
-            if (lastAccess.getMonth() !== now.getMonth() || lastAccess.getFullYear() !== now.getFullYear()) {
-                const lastMonthKey = `${lastAccess.getFullYear()}-${String(lastAccess.getMonth() + 1).padStart(2, '0')}`;
-                
-                if (currentMonthData.transactions.length > 0) {
-                    await updateDoc(doc(db, 'users', currentUser.uid), {
-                        [`history.${lastMonthKey}`]: {
-                            balance: currentMonthData.balance,
-                            transactions: currentMonthData.transactions,
-                            monthName: getHebrewMonthName(lastAccess)
-                        },
-                        currentMonth: {
-                            balance: 0,
-                            transactions: []
-                        },
-                        lastAccess: now
-                    });
-
-                    currentMonthData = {
-                        balance: 0,
-                        transactions: []
-                    };
-                    balance = 0;
-                    transactions = [];
-                    
-                    alert('חודש חדש התחיל! הנתונים הועברו להיסטוריה');
-                    updateUI(0, []);
-                }
-            } else {
-                await updateDoc(doc(db, 'users', currentUser.uid), {
-                    lastAccess: now
-                });
-            }
-        } catch (error) {
-            console.error('Error checking monthly reset:', error);
-        }
-    }
-
-    // פונקצית הצגת היסטוריה
-    window.showHistory = function() {
-        const modal = document.createElement('div');
-        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center';
-        
-        const content = document.createElement('div');
-        content.className = 'bg-white p-6 rounded-xl w-11/12 max-w-4xl max-h-[80vh] overflow-y-auto';
-        
-        let historyHtml = '<h2 class="text-2xl font-bold mb-4">היסטוריית חודשים</h2>';
-        
-        const sortedMonths = Object.keys(historicalData).sort().reverse();
-        
-        if (sortedMonths.length === 0) {
-            historyHtml += '<p class="text-gray-500">אין עדיין היסטוריה לתצוגה</p>';
-        } else {
-            sortedMonths.forEach(monthKey => {
-                const monthData = historicalData[monthKey];
-                const [year, month] = monthKey.split('-');
-                const monthName = monthData.monthName || getHebrewMonthName(new Date(year, parseInt(month) - 1));
-                
-                historyHtml += `
-                    <div class="border-b border-gray-200 py-4">
-                        <h3 class="text-xl font-semibold">${monthName} - ${year}</h3>
-                        <p class="text-lg ${monthData.balance >= 0 ? 'text-green-600' : 'text-red-600'}">
-                            יתרה סופית: ${monthData.balance} ₪
-                        </p>
-                        <div class="mt-2">
-                            <h4 class="font-medium mb-2">תנועות:</h4>
-                            <ul class="space-y-2">
-                                ${monthData.transactions.map(t => `
-                                    <li class="flex justify-between p-2 rounded-lg ${t.type === 'income' ? 'bg-green-100' : 'bg-red-100'}">
-                                        <div class="flex flex-col">
-                                            <span class="text-gray-800">${t.description || ''}</span>
-                                            <span class="text-xs text-gray-500">${new Date(t.date).toLocaleString('he-IL')}</span>
-                                        </div>
-                                        <span class="${t.type === 'income' ? 'text-green-600' : 'text-red-600'}">
-                                            ${t.type === 'income' ? '+' : '-'} ${t.amount} ₪
-                                        </span>
-                                    </li>
-                                `).join('')}
-                            </ul>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-        
-        content.innerHTML = historyHtml + `
-            <button onclick="this.closest('.fixed').remove()" 
-                    class="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
-                סגור
-            </button>
-        `;
-        
-        modal.appendChild(content);
-        document.body.appendChild(modal);
-    };
-
-    // פונקציות UI
-    function updateUI(newBalance, newTransactions) {
-        balance = newBalance;
-        transactions = newTransactions;
-
-        document.getElementById('balance').textContent = `${balance} ₪`;
-        
-        document.getElementById('transactions').innerHTML = transactions.map(t => `
-            <li class="flex justify-between p-2 rounded-lg ${t.type === 'income' ? 'bg-green-100' : 'bg-red-100'}">
-                <div class="flex flex-col">
-                    <span class="text-gray-800">${t.description || ''}</span>
-                    <span class="text-xs text-gray-500">${new Date(t.date).toLocaleString('he-IL')}</span>
-                </div>
-                <span class="${t.type === 'income' ? 'text-green-600' : 'text-red-600'}">
-                    ${t.type === 'income' ? '+' : '-'} ${t.amount} ₪
-                </span>
-            </li>
-        `).join('');
-
-        updateChart();
-    }
-
-    function updateChart() {
-        const ctx = document.getElementById('chartArea').getContext('2d');
-        
-        if (chart) chart.destroy();
-
-        const incomeData = transactions
-            .filter(t => t.type === 'income')
-            .map(t => t.amount);
-
-        const expenseData = transactions
-            .filter(t => t.type === 'expense')
-            .map(t => t.amount);
-
-        chart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['הכנסות', 'הוצאות'],
-                datasets: [{
-                    data: [
-                        incomeData.reduce((a, b) => a + b, 0),
-                        expenseData.reduce((a, b) => a + b, 0)
-                    ],
-                    backgroundColor: ['#10B981', '#EF4444']
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { display: false }
-                }
-            }
-        });
-    }
-
-    // פונקציות נתונים
-    async function loadUserData() {
-        try {
-            const docSnap = await getDoc(doc(db, 'users', currentUser.uid));
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                currentMonthData = data.currentMonth || { balance: 0, transactions: [] };
-                historicalData = data.history || {};
-                
-                await checkAndResetMonthlyData();
-                updateUI(currentMonthData.balance, currentMonthData.transactions);
-            } else {
-                await initializeUserData();
-            }
-            updateCurrentDate();
-        } catch (error) {
-            console.error('Error loading user data:', error);
-            alert('שגיאה בטעינת נתונים: ' + error.message);
-        }
-    }
-
-    async function initializeUserData() {
-        try {
-            await setDoc(doc(db, 'users', currentUser.uid), {
-                currentMonth: {
-                    balance: 0,
-                    transactions: []
-                },
-                history: {},
-                lastAccess: new Date()
-            });
-            updateUI(0, []);
-            updateCurrentDate();
-        } catch (error) {
-            console.error('Error initializing user data:', error);
-            alert('שגיאה באתחול נתוני משתמש: ' + error.message);
-        }
-    }
-
-    async function saveUserData(newBalance, newTransactions) {
-        try {
-            currentMonthData = {
-                balance: newBalance,
-                transactions: newTransactions
-            };
-            
-            await updateDoc(doc(db, 'users', currentUser.uid), {
-                'currentMonth': currentMonthData
-            });
-        } catch (error) {
-            console.error('Error saving user data:', error);
-            alert('שגיאה בשמירת נתונים: ' + error.message);
-        }
-    }
-
-    // פונקציות אימות
-    window.login = async () => {
-        const email = document.getElementById('emailInput').value;
-        const password = document.getElementById('passwordInput').value;
-
-        if (!email || !password) {
-            alert('אנא הזן אימייל וסיסמה');
-            return;
-        }
-
-        try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            currentUser = userCredential.user;
-            
-            // שליחת מייל התחברות
-            try {
-                await onLoginDetected({
-                    email: currentUser.email,
-                    displayName: currentUser.displayName || 'משתמש יקר',
-                    username: currentUser.email.split('@')[0]
-                });
-                console.log('מייל התחברות נשלח בהצלחה');
-            } catch (emailError) {
-                console.error('שגיאה בשליחת מייל התחברות:', emailError);
-            }
-            
-            switchToApp();
-            await loadUserData();
-        } catch (error) {
-            console.error('Login error:', error);
-            alert('שגיאה בהתחברות: ' + error.message);
-        }
-    };
-
-    window.register = async () => {
-        const email = document.getElementById('emailInput').value;
-        const password = document.getElementById('passwordInput').value;
-
-        if (!email || !password) {
-            alert('אנא הזן אימייל וסיסמה');
-            return;
-        }
-
-        try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            currentUser = userCredential.user;
-            switchToApp();
-            await initializeUserData();
-        } catch (error) {
-            console.error('Registration error:', error);
-            alert('שגיאה בהרשמה: ' + error.message);
-        }
-    };
-
-    window.loginWithGoogle = async () => {
-        try {
-            const result = await signInWithPopup(auth, googleProvider);
-            currentUser = result.user;
-            switchToApp();
-            
-            const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-            if (!userDoc.exists()) {
-                await initializeUserData();
-            } else {
-                await loadUserData();
-            }
-        } catch (error) {
-            console.error('Google login error:', error);
-            alert('שגיאה בהתחברות עם Google: ' + error.message);
-        }
-    };
-
-    // פונקציות מודאל
-    let currentTransactionType = '';
-
-    window.openModal = (type) => {
-        currentTransactionType = type;
-        document.getElementById('transactionModal').classList.remove('hidden');
-        document.getElementById('transactionModal').classList.add('flex');
-        document.getElementById('modalTitle').textContent = type === 'income' ? 'הוספת הכנסה' : 'הוספת הוצאה';
-        document.getElementById('amountInput').value = '';
-        document.getElementById('descriptionInput').value = '';
-        document.getElementById('amountInput').focus();
-    };
-
-    window.closeModal = () => {
-        document.getElementById('transactionModal').classList.add('hidden');
-        document.getElementById('transactionModal').classList.remove('flex');
-    };
-
-    window.saveTransaction = async () => {
-        const amount = parseFloat(document.getElementById('amountInput').value);
-        const description = document.getElementById('descriptionInput').value;
-        const CURRENT_TIME = "2025-03-26 21:38:57";
-        const USER_LOGIN = "Amitmatyas";
-
-        if (!amount || isNaN(amount)) {
-            alert('אנא הזן סכום תקין');
-            return;
-        }
-
-        const transaction = {
-            type: currentTransactionType,
-            amount: Math.abs(amount),
-            description,
-            date: CURRENT_TIME
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCtlCl3Mnxr22HpHe3QaHwizNL4VNOdlGc",
+            authDomain: "finnance-manger.firebaseapp.com",
+            projectId: "finnance-manger",
+            storageBucket: "finnance-manger.firebasestorage.app",
+            messagingSenderId: "341045979158",
+            appId: "1:341045979158:web:57c180406d33d5b6a76d37",
+            measurementId: "G-G1HVDTTG6K"
         };
 
-        const newTransactions = [...transactions, transaction];
-        const newBalance = currentTransactionType === 'income' 
-            ? balance + amount 
-            : balance - amount;
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
 
-        try {
-            // קודם נשמור את הנתונים
-            await saveUserData(newBalance, newTransactions);
-            
-            // אחר כך ננסה לשלוח מייל
+        // גלובליים משתנים
+        let currentUser = null;
+        let balance = 0;
+        let transactions = [];
+        let chart = null;
+        let currentMonthData = {
+            balance: 0,
+            transactions: []
+        };
+        let historicalData = {};
+        let currentTransactionType = '';
+
+        // פונקציות אימות
+        window.login = async () => {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+
+            if (!email || !password) {
+                alert('אנא הזן אימייל וסיסמה');
+                return;
+            }
+
             try {
-                await onTransactionDetected({
-                    email: currentUser.email,
-                    displayName: USER_LOGIN,
-                    username: USER_LOGIN
-                }, {
-                    amount: transaction.amount,
-                    description: transaction.description || 'ללא תיאור',
-                    type: transaction.type,
-                    newBalance: newBalance,
-                    local_time: CURRENT_TIME,
-                    user_login: USER_LOGIN
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                currentUser = userCredential.user;
+                
+                document.getElementById('userEmail').textContent = currentUser.email;
+                
+                try {
+                    await onLoginDetected();
+                    console.log('מייל התחברות נשלח בהצלחה');
+                } catch (emailError) {
+                    console.error('שגיאה בשליחת מייל התחברות:', emailError);
+                }
+                
+                switchToApp();
+                await loadUserData();
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('שגיאה בהתחברות: ' + error.message);
+            }
+        };
+
+        window.loginWithGoogle = async () => {
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                currentUser = result.user;
+                
+                document.getElementById('userEmail').textContent = currentUser.email;
+                
+                try {
+                    await onLoginDetected();
+                    console.log('מייל התחברות נשלח בהצלחה');
+                } catch (emailError) {
+                    console.error('שגיאה בשליחת מייל התחברות:', emailError);
+                }
+                
+                switchToApp();
+                
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (!userDoc.exists()) {
+                    await initializeUserData();
+                } else {
+                    await loadUserData();
+                }
+            } catch (error) {
+                console.error('Google login error:', error);
+                alert('שגיאה בהתחברות עם Google: ' + error.message);
+            }
+        };
+
+        // פונקציית שמירת עסקה
+        window.saveTransaction = async () => {
+            const amount = parseFloat(document.getElementById('amountInput').value);
+            const description = document.getElementById('descriptionInput').value;
+            
+            if (!amount || isNaN(amount)) {
+                alert('אנא הזן סכום תקין');
+                return;
+            }
+
+            const transaction = {
+                type: currentTransactionType,
+                amount: Math.abs(amount),
+                description,
+                date: "2025-03-27 18:53:15"
+            };
+
+            const newTransactions = [...transactions, transaction];
+            const newBalance = currentTransactionType === 'income' 
+                ? balance + amount 
+                : balance - amount;
+
+            try {
+                await saveUserData(newBalance, newTransactions);
+                
+                try {
+                    await onTransactionDetected({
+                        amount: transaction.amount,
+                        description: transaction.description || 'ללא תיאור',
+                        type: transaction.type,
+                        newBalance: newBalance,
+                        local_time: "2025-03-27 18:53:15",
+                        user_login: "Amitmatyas"
+                    });
+                } catch (emailError) {
+                    console.error('שגיאה בשליחת המייל:', emailError);
+                }
+
+                updateUI(newBalance, newTransactions);
+                closeModal();
+            } catch (error) {
+                console.error('Error saving transaction:', error);
+                alert('שגיאה בשמירת העסקה. נא לנסות שוב.');
+            }
+        };
+
+        // פונקציות איפוס סיסמה
+        window.resetPassword = () => {
+            document.getElementById('resetPasswordModal').classList.remove('hidden');
+            document.getElementById('resetPasswordModal').classList.add('flex');
+        };
+
+        window.closeResetModal = () => {
+            document.getElementById('resetPasswordModal').classList.add('hidden');
+            document.getElementById('resetPasswordModal').classList.remove('flex');
+            document.getElementById('resetEmail').value = '';
+        };
+
+        window.sendResetEmail = async () => {
+            const email = document.getElementById('resetEmail').value;
+            
+            if (!email) {
+                alert('נא להזין כתובת דוא"ל');
+                return;
+            }
+
+            try {
+                await sendPasswordResetEmail(auth, email);
+                alert('קישור לאיפוס סיסמה נשלח לדוא"ל שלך');
+                closeResetModal();
+            } catch (error) {
+                console.error('שגיאה באיפוס סיסמה:', error);
+                alert('שגיאה באיפוס סיסמה. נא לנסות שוב מאוחר יותר.');
+            }
+        };
+
+        // פונקציית עזר לקבלת שם החודש בעברית
+        function getHebrewMonthName(date) {
+            return date.toLocaleString('he-IL', { month: 'long' });
+        }
+
+        // פונקציה לעדכון התאריך הנוכחי
+        function updateCurrentDate() {
+            const now = new Date();
+            const hebrewDate = now.toLocaleString('he-IL', {
+                year: 'numeric',
+                month: 'long'
+            });
+            document.getElementById('currentDate').textContent = hebrewDate;
+        }
+
+        // פונקציה לבדיקת איפוס חודשי
+        async function checkAndResetMonthlyData() {
+            const now = new Date();
+            const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            
+            try {
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                const userData = userDoc.data();
+                const lastAccess = userData?.lastAccess?.toDate() || new Date();
+                
+                if (lastAccess.getMonth() !== now.getMonth() || lastAccess.getFullYear() !== now.getFullYear()) {
+                    const lastMonthKey = `${lastAccess.getFullYear()}-${String(lastAccess.getMonth() + 1).padStart(2, '0')}`;
+                    
+                    if (currentMonthData.transactions.length > 0) {
+                        await updateDoc(doc(db, 'users', currentUser.uid), {
+                            [`history.${lastMonthKey}`]: {
+                                balance: currentMonthData.balance,
+                                transactions: currentMonthData.transactions,
+                                monthName: getHebrewMonthName(lastAccess)
+                            },
+                            currentMonth: {
+                                balance: 0,
+                                transactions: []
+                            },
+                            lastAccess: now
+                        });
+
+                        currentMonthData = {
+                            balance: 0,
+                            transactions: []
+                        };
+                        balance = 0;
+                        transactions = [];
+                        
+                        alert('חודש חדש התחיל! הנתונים הועברו להיסטוריה');
+                        updateUI(0, []);
+                    }
+                } else {
+                    await updateDoc(doc(db, 'users', currentUser.uid), {
+                        lastAccess: now
+                    });
+                }
+            } catch (error) {
+                console.error('Error checking monthly reset:', error);
+            }
+        }
+
+        // פונקצית הצגת היסטוריה
+        window.showHistory = function() {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center';
+            
+            const content = document.createElement('div');
+            content.className = 'bg-white p-6 rounded-xl w-11/12 max-w-4xl max-h-[80vh] overflow-y-auto';
+            
+            let historyHtml = '<h2 class="text-2xl font-bold mb-4">היסטוריית חודשים</h2>';
+            
+            const sortedMonths = Object.keys(historicalData).sort().reverse();
+            
+            if (sortedMonths.length === 0) {
+                historyHtml += '<p class="text-gray-500">אין עדיין היסטוריה לתצוגה</p>';
+            } else {
+                sortedMonths.forEach(monthKey => {
+                    const monthData = historicalData[monthKey];
+                    const [year, month] = monthKey.split('-');
+                    const monthName = monthData.monthName || getHebrewMonthName(new Date(year, parseInt(month) - 1));
+                    
+                    historyHtml += `
+                        <div class="border-b border-gray-200 py-4">
+                            <h3 class="text-xl font-semibold">${monthName} - ${year}</h3>
+                            <p class="text-lg ${monthData.balance >= 0 ? 'text-green-600' : 'text-red-600'}">
+                                יתרה סופית: ${monthData.balance} ₪
+                            </p>
+                            <div class="mt-2">
+                                <h4 class="font-medium mb-2">תנועות:</h4>
+                                <ul class="space-y-2">
+                                    ${monthData.transactions.map(t => `
+                                        <li class="flex justify-between p-2 rounded-lg ${t.type === 'income' ? 'bg-green-100' : 'bg-red-100'}">
+                                            <div class="flex flex-col">
+                                                <span class="text-gray-800">${t.description || ''}</span>
+                                                <span class="text-xs text-gray-500">${new Date(t.date).toLocaleString('he-IL')}</span>
+                                            </div>
+                                            <span class="${t.type === 'income' ? 'text-green-600' : 'text-red-600'}">
+                                                ${t.type === 'income' ? '+' : '-'} ${t.amount} ₪
+                                            </span>
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    `;
                 });
-            } catch (emailError) {
-                console.error('שגיאה בשליחת המייל:', emailError);
-                // נמשיך הלאה גם אם שליחת המייל נכשלה
             }
+            
+            content.innerHTML = historyHtml + `
+                <button onclick="this.closest('.fixed').remove()" 
+                        class="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
+                    סגור
+                </button>
+            `;
+            
+            modal.appendChild(content);
+            document.body.appendChild(modal);
+        };
 
-            updateUI(newBalance, newTransactions);
-            closeModal();
-        } catch (error) {
-            console.error('Error saving transaction:', error);
-            alert('שגיאה בשמירת העסקה. נא לנסות שוב.');
+        // פונקציות UI
+        function updateUI(newBalance, newTransactions) {
+            balance = newBalance;
+            transactions = newTransactions;
+
+            document.getElementById('balance').textContent = `${balance} ₪`;
+            
+            document.getElementById('transactions').innerHTML = transactions.map(t => `
+                <li class="flex justify-between p-2 rounded-lg ${t.type === 'income' ? 'bg-green-100' : 'bg-red-100'}">
+                    <div class="flex flex-col">
+                        <span class="text-gray-800">${t.description || ''}</span>
+                        <span class="text-xs text-gray-500">${new Date(t.date).toLocaleString('he-IL')}</span>
+                    </div>
+                    <span class="${t.type === 'income' ? 'text-green-600' : 'text-red-600'}">
+                        ${t.type === 'income' ? '+' : '-'} ${t.amount} ₪
+                    </span>
+                </li>
+            `).join('');
+
+            updateChart();
         }
-    };
-    // פונקציית התנתקות
-    window.logout = async () => {
-        try {
-            await signOut(auth);
-            currentUser = null;
-            document.getElementById('appContainer').classList.add('hidden');
-            document.getElementById('loginContainer').classList.remove('hidden');
-            document.getElementById('emailInput').value = '';
-            document.getElementById('passwordInput').value = '';
-            if (chart) {
-                chart.destroy();
-                chart = null;
+
+        function updateChart() {
+            const ctx = document.getElementById('chartArea').getContext('2d');
+            
+            if (chart) chart.destroy();
+
+            const incomeData = transactions
+                .filter(t => t.type === 'income')
+                .map(t => t.amount);
+
+            const expenseData = transactions
+                .filter(t => t.type === 'expense')
+                .map(t => t.amount);
+
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['הכנסות', 'הוצאות'],
+                    datasets: [{
+                        data: [
+                            incomeData.reduce((a, b) => a + b, 0),
+                            expenseData.reduce((a, b) => a + b, 0)
+                        ],
+                        backgroundColor: ['#10B981', '#EF4444']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        // פונקציות נתונים
+        async function loadUserData() {
+            try {
+                const docSnap = await getDoc(doc(db, 'users', currentUser.uid));
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    currentMonthData = data.currentMonth || { balance: 0, transactions: [] };
+                    historicalData = data.history || {};
+                    
+                    await checkAndResetMonthlyData();
+                    updateUI(currentMonthData.balance, currentMonthData.transactions);
+                } else {
+                    await initializeUserData();
+                }
+                updateCurrentDate();
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                alert('שגיאה בטעינת נתונים: ' + error.message);
             }
-        } catch (error) {
-            console.error('Logout error:', error);
-            alert('שגיאה בהתנתקות: ' + error.message);
         }
-    };
 
-    // מאזיני אירועים לכפתורים
-    document.getElementById('loginBtn').addEventListener('click', () => {
-        window.login();
-    });
-
-    document.getElementById('registerBtn').addEventListener('click', () => {
-        window.register();
-    });
-
-    document.getElementById('googleLoginBtn').addEventListener('click', () => {
-        window.loginWithGoogle();
-    });
-
-    // מאזיני אירועים למקשי Enter בשדות הקלט
-    document.getElementById('emailInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            document.getElementById('passwordInput').focus();
+        async function initializeUserData() {
+            try {
+                await setDoc(doc(db, 'users', currentUser.uid), {
+                    currentMonth: {
+                        balance: 0,
+                        transactions: []
+                    },
+                    history: {},
+                    lastAccess: new Date()
+                });
+                updateUI(0, []);
+                updateCurrentDate();
+            } catch (error) {
+                console.error('Error initializing user data:', error);
+                alert('שגיאה באתחול נתוני משתמש: ' + error.message);
+            }
         }
-    });
 
-    document.getElementById('passwordInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            window.login();
+        async function saveUserData(newBalance, newTransactions) {
+            try {
+                currentMonthData = {
+                    balance: newBalance,
+                    transactions: newTransactions
+                };
+                
+                await updateDoc(doc(db, 'users', currentUser.uid), {
+                    'currentMonth': currentMonthData
+                });
+            } catch (error) {
+                console.error('Error saving user data:', error);
+                alert('שגיאה בשמירת נתונים: ' + error.message);
+            }
         }
-    });
 
-    // פונקציה להחלפה בין מסכים
-    function switchToApp() {
-        document.getElementById('loginContainer').classList.add('hidden');
-        document.getElementById('appContainer').classList.remove('hidden');
-        document.getElementById('userEmail').textContent = currentUser.email;
-    }
+        // פונקציות מודאל
+        window.openModal = (type) => {
+            currentTransactionType = type;
+            document.getElementById('transactionModal').classList.remove('hidden');
+            document.getElementById('transactionModal').classList.add('flex');
+            document.getElementById('modalTitle').textContent = type === 'income' ? 'הוספת הכנסה' : 'הוספת הוצאה';
+            document.getElementById('amountInput').value = '';
+            document.getElementById('descriptionInput').value = '';
+            document.getElementById('amountInput').focus();
+        };
 
-    // בדיקת מצב התחברות בטעינת הדף
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            currentUser = user;
-            switchToApp();
-            loadUserData();
+        window.closeModal = () => {
+            document.getElementById('transactionModal').classList.add('hidden');
+            document.getElementById('transactionModal').classList.remove('flex');
+        };
+
+        // פונקציית התנתקות
+        window.logout = async () => {
+            try {
+                await signOut(auth);
+                currentUser = null;
+                document.getElementById('appContainer').classList.add('hidden');
+                document.getElementById('loginContainer').classList.remove('hidden');
+                document.getElementById('emailInput').value = '';
+                document.getElementById('passwordInput').value = '';
+                if (chart) {
+                    chart.destroy();
+                    chart = null;
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert('שגיאה בהתנתקות: ' + error.message);
+            }
+        };
+
+        // מאזיני אירועים לכפתורים
+        document.getElementById('loginBtn').addEventListener('click', window.login);
+        document.getElementById('registerBtn').addEventListener('click', window.register);
+        document.getElementById('googleLoginBtn').addEventListener('click', window.loginWithGoogle);
+
+        // מאזיני אירועים למקשי Enter
+        document.getElementById('emailInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('passwordInput').focus();
+            }
+        });
+
+        document.getElementById('passwordInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                window.login();
+            }
+        });
+
+        // פונקציה להחלפה בין מסכים
+        function switchToApp() {
+            document.getElementById('loginContainer').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+            document.getElementById('userEmail').textContent = currentUser.email;
         }
-    });
 
-  </script>
+        // בדיקת מצב התחברות בטעינת הדף
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                switchToApp();
+                loadUserData();
+            }
+        });
+    </script>
 </body>
 </html>
