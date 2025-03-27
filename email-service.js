@@ -34,10 +34,10 @@ function getCurrentDateTime() {
 })();
 
 // פונקציה לשליחת מייל בעת התחברות
-async function onLoginDetected(user) {
+async function onLoginDetected(email) {
     try {
         // בדיקת תקינות כתובת המייל
-        if (!user || !user.email || !isValidEmail(user.email)) {
+        if (!email || !isValidEmail(email)) {
             console.error("Invalid or missing email address");
             return false;
         }
@@ -47,11 +47,10 @@ async function onLoginDetected(user) {
         const ipData = await ipResponse.json();
 
         const emailData = {
-            to_name: user.email,
+            to_name: email,
             from_name: "Finance Manager",
-            name: user.displayName || 'משתמש יקר',
+            user_login: email.split('@')[0],
             local_time: getCurrentDateTime(),
-            user_login: user.email.split('@')[0],
             device_info: navigator.userAgent,
             ip_address: ipData.ip
         };
@@ -77,20 +76,19 @@ async function onLoginDetected(user) {
 }
 
 // פונקציה לשליחת מייל בעת ביצוע עסקה
-async function onTransactionDetected(user, transactionDetails) {
+async function onTransactionDetected(email, transactionDetails) {
     try {
         // בדיקת תקינות כתובת המייל
-        if (!user || !user.email || !isValidEmail(user.email)) {
+        if (!email || !isValidEmail(email)) {
             console.error("Invalid or missing email address");
             return false;
         }
 
         const emailData = {
-            to_name: user.email,
+            to_name: email,
             from_name: "Finance Manager",
-            name: user.displayName || 'משתמש יקר',
+            user_login: email.split('@')[0],
             local_time: getCurrentDateTime(),
-            user_login: user.email.split('@')[0],
             amount: transactionDetails.amount,
             description: transactionDetails.description || 'ללא תיאור',
             new_balance: transactionDetails.newBalance,
