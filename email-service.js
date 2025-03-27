@@ -28,23 +28,23 @@ function getCurrentDateTime() {
 }
 
 // פונקציה לשליחת מייל עם דיבאג מפורט
-async function sendEmailWithDetailedLogging(email, templateId, additionalData = {}) {
+async function sendEmailWithDetailedLogging(userData, templateId, additionalData = {}) {
     // בדיקת תקינות האימייל
-    if (!isValidEmail(email)) {
-        console.error(`שגיאה: כתובת המייל ${email} אינה תקינה`);
+    if (!userData || !isValidEmail(userData.email)) {
+        console.error(`שגיאה: כתובת המייל ${userData.email} אינה תקינה`);
         return false;
     }
 
     try {
         // הכנת נתוני המייל
         const emailData = {
-            to_email: email.trim(),
+            to_email: userData.email.trim(),
             from_name: "Finance Manager",
-            user_login: email.split('@')[0],
+            display_name: userData.displayName || userData.username,
+            user_login: userData.username || userData.email.split('@')[0],
             local_time: getCurrentDateTime(),
             ...additionalData
         };
-
         console.log("מנסה לשלוח מייל עם הנתונים:", emailData);
 
         // וודא שספריית EmailJS נטענה
@@ -59,10 +59,8 @@ async function sendEmailWithDetailedLogging(email, templateId, additionalData = 
             templateId, 
             emailData
         );
-
         console.log("המייל נשלח בהצלחה:", response);
         return true;
-
     } catch (error) {
         console.error("שגיאה בשליחת המייל:", {
             message: error.message,
@@ -75,16 +73,16 @@ async function sendEmailWithDetailedLogging(email, templateId, additionalData = 
 }
 
 // פונקציות עיקריות לשליחת מייל
-async function onLoginDetected(email) {
+async function onLoginDetected(userData) {
     return sendEmailWithDetailedLogging(
-        email, 
+        userData, 
         emailjsConfig.LOGIN_TEMPLATE
     );
 }
 
-async function onTransactionDetected(email, transactionDetails) {
+async function onTransactionDetected(userData, transactionDetails) {
     return sendEmailWithDetailedLogging(
-        email, 
+        userData, 
         emailjsConfig.TRANSACTION_TEMPLATE, 
         {
             amount: transactionDetails.amount,
