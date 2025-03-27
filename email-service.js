@@ -1,7 +1,7 @@
 // קונפיגורציה של EmailJS
 const emailjsConfig = {
-    PUBLIC_KEY: "YOUR_PUBLIC_KEY", // החלף במפתח הציבורי שלך
-    SERVICE_ID: "YOUR_SERVICE_ID", // החלף במזהה השירות שלך
+    PUBLIC_KEY: "PsDDfAH8bMiKGAGM2",
+    SERVICE_ID: "service_hz4dvn9",
     LOGIN_TEMPLATE: "template_login",
     TRANSACTION_TEMPLATE: "template_transaction"
 };
@@ -15,7 +15,7 @@ function isValidEmail(email) {
 // פונקציה שמחזירה את התאריך והשעה הנוכחיים בפורמט הרצוי
 function getCurrentDateTime() {
     const now = new Date();
-    now.setHours(now.getHours() + 2);
+    now.setHours(now.getHours() + 2); // התאמה לאזור זמן ישראל
     
     const year = now.getUTCFullYear();
     const month = String(now.getUTCMonth() + 1).padStart(2, '0');
@@ -23,15 +23,21 @@ function getCurrentDateTime() {
     const hours = String(now.getUTCHours()).padStart(2, '0');
     const minutes = String(now.getUTCMinutes()).padStart(2, '0');
     const seconds = String(now.getUTCSeconds()).padStart(2, '0');
+    
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
 // פונקציה לשליחת מייל עם דיבאג מפורט
 async function sendEmailWithDetailedLogging(userData, templateId, additionalData = {}) {
-    // הפקת האימייל
-    const email = document.getElementById('userEmail').textContent; // שימוש בשורה מהHTML
+    // הפקת האימייל מהמשתמש המחובר
+    const email = document.getElementById('userEmail').textContent;
 
-    // בדיקת תקינות האימייל
+    // בדיקות תקינות
+    if (!email || email.trim() === '') {
+        console.error('שגיאה: כתובת המייל ריקה');
+        return false;
+    }
+
     if (!isValidEmail(email)) {
         console.error(`שגיאה: כתובת המייל ${email} אינה תקינה`);
         return false;
@@ -87,7 +93,8 @@ async function onTransactionDetected(transactionDetails) {
             amount: transactionDetails.amount,
             description: transactionDetails.description || 'ללא תיאור',
             new_balance: transactionDetails.newBalance,
-            transaction_type: transactionDetails.type === 'income' ? 'הכנסה' : 'הוצאה'
+            transaction_type: transactionDetails.type === 'income' ? 'הכנסה' : 'הוצאה',
+            local_time: getCurrentDateTime()
         }
     );
 }
