@@ -29,19 +29,24 @@ function getCurrentDateTime() {
 
 // פונקציה לשליחת מייל עם דיבאג מפורט
 async function sendEmailWithDetailedLogging(userData, templateId, additionalData = {}) {
+    // הפקת האימייל מהאובייקט של המשתמש
+    const email = userData.email || 
+                  (userData.user ? userData.user.email : null) || 
+                  (typeof userData === 'string' ? userData : null);
+
     // בדיקת תקינות האימייל
-    if (!userData || !isValidEmail(userData.email)) {
-        console.error(`שגיאה: כתובת המייל ${userData.email} אינה תקינה`);
+    if (!isValidEmail(email)) {
+        console.error(`שגיאה: כתובת המייל ${email} אינה תקינה`);
         return false;
     }
 
     try {
         // הכנת נתוני המייל
         const emailData = {
-            to_email: userData.email.trim(),
+            to_email: email.trim(),
             from_name: "Finance Manager",
-            display_name: userData.displayName || userData.username,
-            user_login: userData.username || userData.email.split('@')[0],
+            display_name: (userData.displayName || userData.username || email.split('@')[0]),
+            user_login: (userData.username || email.split('@')[0]),
             local_time: getCurrentDateTime(),
             ...additionalData
         };
