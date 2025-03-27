@@ -8,8 +8,9 @@ const emailjsConfig = {
 
 // פונקציה לאימות כתובת מייל
 function isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    // בדיקה יותר מדויקת של כתובת מייל
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return email && typeof email === 'string' && emailRegex.test(email.trim());
 }
 
 // פונקציה שמחזירה את התאריך והשעה הנוכחיים בפורמט הרצוי
@@ -28,39 +29,27 @@ function getCurrentDateTime() {
 
 // פונקציה לשליחת מייל עם דיבאג מפורט
 async function sendEmailWithDetailedLogging(email, templateId, additionalData = {}) {
-    // וודא שהפרמטרים תקינים
-    if (!email || !isValidEmail(email)) {
-        console.error("שגיאה: כתובת מייל לא תקינה");
+    // בדיקת תקינות האימייל
+    if (!isValidEmail(email)) {
+        console.error(`שגיאה: כתובת המייל ${email} אינה תקינה`);
         return false;
     }
 
     try {
-        // קבלת כתובת IP (אופציונלי)
-        let ipAddress = 'לא זוהה';
-        try {
-            const ipResponse = await fetch('https://api.ipify.org?format=json');
-            const ipData = await ipResponse.json();
-            ipAddress = ipData.ip;
-        } catch (ipError) {
-            console.warn("לא ניתן היה לקבל כתובת IP:", ipError);
-        }
-
         // הכנת נתוני המייל
         const emailData = {
-            to_email: email,
+            to_email: email.trim(),
             from_name: "Finance Manager",
             user_login: email.split('@')[0],
             local_time: getCurrentDateTime(),
-            device_info: navigator.userAgent,
-            ip_address: ipAddress,
-            ...additionalData  // הוספת נתונים נוספים אם יש
+            ...additionalData
         };
 
-        console.log("מנסה לשלוח מייל עם הנתונים הבאים:", emailData);
+        console.log("מנסה לשלוח מייל עם הנתונים:", emailData);
 
-        // בדיקת אתחול EmailJS
+        // וודא שספריית EmailJS נטענה
         if (typeof emailjs === 'undefined') {
-            console.error("שגיאה: EmailJS לא אותחל");
+            console.error("שגיאה: EmailJS לא נטען. וודא שהסקריפט נכלל בעמוד");
             return false;
         }
 
@@ -75,7 +64,6 @@ async function sendEmailWithDetailedLogging(email, templateId, additionalData = 
         return true;
 
     } catch (error) {
-        // טיפול מפורט בשגיאות
         console.error("שגיאה בשליחת המייל:", {
             message: error.message,
             name: error.name,
@@ -107,15 +95,22 @@ async function onTransactionDetected(email, transactionDetails) {
     );
 }
 
-// בדיקת אתחול EmailJS בעת טעינת העמוד
-window.onload = function() {
-    try {
-        emailjs.init(emailjsConfig.PUBLIC_KEY);
-        console.log("EmailJS אותחל בהצלחה");
-    } catch (error) {
-        console.error("שגיאה באתחול EmailJS:", error);
+// אתחול EmailJS 
+function initEmailJS() {
+    if (typeof emailjs !== 'undefined') {
+        try {
+            emailjs.init(emailjsConfig.PUBLIC_KEY);
+            console.log("EmailJS אותחל בהצלחה");
+        } catch (error) {
+            console.error("שגיאה באתחול EmailJS:", error);
+        }
+    } else {
+        console.error("סקריפט EmailJS לא נטען. אנא וודא שהסקריפט מוכלל בעמוד HTML");
     }
-};
+}
+
+// קרא לפונקציית האתחול
+initEmailJS();
 
 // ייצוא הפונקציות
 window.onLoginDetected = onLoginDetected;
