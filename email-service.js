@@ -15,7 +15,6 @@ function isValidEmail(email) {
 // פונקציה שמחזירה את התאריך והשעה הנוכחיים בפורמט הרצוי
 function getCurrentDateTime() {
     const now = new Date();
-    // הוספת שעתיים לזמן UTC כדי לקבל את הזמן בישראל
     now.setHours(now.getHours() + 2);
     
     const year = now.getUTCFullYear();
@@ -27,93 +26,96 @@ function getCurrentDateTime() {
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
-// אתחול EmailJS
-(function initEmailJS() {
-    emailjs.init(emailjsConfig.PUBLIC_KEY);
-    console.log("EmailJS initialized successfully");
-})();
+// פונקציה לשליחת מייל עם דיבאג מפורט
+async function sendEmailWithDetailedLogging(email, templateId, additionalData = {}) {
+    // וודא שהפרמטרים תקינים
+    if (!email || !isValidEmail(email)) {
+        console.error("שגיאה: כתובת מייל לא תקינה");
+        return false;
+    }
 
-// פונקציה לשליחת מייל בעת התחברות
-async function onLoginDetected(email) {
     try {
-        // בדיקת תקינות כתובת המייל
-        if (!email || !isValidEmail(email)) {
-            console.error("Invalid or missing email address");
-            return false;
+        // קבלת כתובת IP (אופציונלי)
+        let ipAddress = 'לא זוהה';
+        try {
+            const ipResponse = await fetch('https://api.ipify.org?format=json');
+            const ipData = await ipResponse.json();
+            ipAddress = ipData.ip;
+        } catch (ipError) {
+            console.warn("לא ניתן היה לקבל כתובת IP:", ipError);
         }
 
-        // קבלת כתובת IP של המשתמש
-        const ipResponse = await fetch('https://api.ipify.org?format=json');
-        const ipData = await ipResponse.json();
-
+        // הכנת נתוני המייל
         const emailData = {
-            to_name: email,
+            to_email: email,
             from_name: "Finance Manager",
             user_login: email.split('@')[0],
             local_time: getCurrentDateTime(),
             device_info: navigator.userAgent,
-            ip_address: ipData.ip
+            ip_address: ipAddress,
+            ...additionalData  // הוספת נתונים נוספים אם יש
         };
 
-        console.log("Sending login email with data:", emailData);
-        
-        try {
-            const response = await emailjs.send(
-                emailjsConfig.SERVICE_ID,
-                emailjsConfig.LOGIN_TEMPLATE,
-                emailData
-            );
-            console.log("Login email sent successfully:", response);
-            return true;
-        } catch (emailError) {
-            console.error("Detailed EmailJS error:", emailError);
+        console.log("מנסה לשלוח מייל עם הנתונים הבאים:", emailData);
+
+        // בדיקת אתחול EmailJS
+        if (typeof emailjs === 'undefined') {
+            console.error("שגיאה: EmailJS לא אותחל");
             return false;
         }
+
+        // שליחת המייל
+        const response = await emailjs.send(
+            emailjsConfig.SERVICE_ID, 
+            templateId, 
+            emailData
+        );
+
+        console.log("המייל נשלח בהצלחה:", response);
+        return true;
+
     } catch (error) {
-        console.error("Failed to send login email:", error);
+        // טיפול מפורט בשגיאות
+        console.error("שגיאה בשליחת המייל:", {
+            message: error.message,
+            name: error.name,
+            status: error.status,
+            text: error.text
+        });
         return false;
     }
 }
 
-// פונקציה לשליחת מייל בעת ביצוע עסקה
-async function onTransactionDetected(email, transactionDetails) {
-    try {
-        // בדיקת תקינות כתובת המייל
-        if (!email || !isValidEmail(email)) {
-            console.error("Invalid or missing email address");
-            return false;
-        }
+// פונקציות עיקריות לשליחת מייל
+async function onLoginDetected(email) {
+    return sendEmailWithDetailedLogging(
+        email, 
+        emailjsConfig.LOGIN_TEMPLATE
+    );
+}
 
-        const emailData = {
-            to_name: email,
-            from_name: "Finance Manager",
-            user_login: email.split('@')[0],
-            local_time: getCurrentDateTime(),
+async function onTransactionDetected(email, transactionDetails) {
+    return sendEmailWithDetailedLogging(
+        email, 
+        emailjsConfig.TRANSACTION_TEMPLATE, 
+        {
             amount: transactionDetails.amount,
             description: transactionDetails.description || 'ללא תיאור',
             new_balance: transactionDetails.newBalance,
             transaction_type: transactionDetails.type === 'income' ? 'הכנסה' : 'הוצאה'
-        };
-
-        console.log("Sending transaction email with data:", emailData);
-        
-        try {
-            const response = await emailjs.send(
-                emailjsConfig.SERVICE_ID,
-                emailjsConfig.TRANSACTION_TEMPLATE,
-                emailData
-            );
-            console.log("Transaction email sent successfully:", response);
-            return true;
-        } catch (emailError) {
-            console.error("Detailed EmailJS error:", emailError);
-            return false;
         }
-    } catch (error) {
-        console.error("Failed to send transaction email:", error);
-        return false;
-    }
+    );
 }
+
+// בדיקת אתחול EmailJS בעת טעינת העמוד
+window.onload = function() {
+    try {
+        emailjs.init(emailjsConfig.PUBLIC_KEY);
+        console.log("EmailJS אותחל בהצלחה");
+    } catch (error) {
+        console.error("שגיאה באתחול EmailJS:", error);
+    }
+};
 
 // ייצוא הפונקציות
 window.onLoginDetected = onLoginDetected;
