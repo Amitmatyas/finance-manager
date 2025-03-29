@@ -185,73 +185,66 @@
         let historicalData = {};
         let currentTransactionType = '';
 
-  // פונקציות אימות
-        window.login = async () => {
-            const email = document.getElementById('emailInput').value;
-            const password = document.getElementById('passwordInput').value;
+// פונקציות אימות
+  window.login = async () => {
+    const email = document.getElementById('emailInput').value;
+    const password = document.getElementById('passwordInput').value;
 
-            if (!email || !password) {
-                alert('אנא הזן אימייל וסיסמה');
-                return;
-            }
+    if (!email || !password) {
+      alert('אנא הזן אימייל וסיסמה');
+      return;
+    }
 
-            try {
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                currentUser = userCredential.user;
-                
-                document.getElementById('userEmail').textContent = currentUser.email;
-                
-                const emailSent = await onLoginDetected(email);
-                if (emailSent) {
-                    console.log('מייל התחברות נשלח בהצלחה');
-                } else {
-                    console.log('מייל התחברות לא נשלח עקב שגיאה.');
-                }
-                
-                switchToApp();
-                await loadUserData();
-            } catch (error) {
-                console.error('Login error:', error);
-                alert('שגיאה בהתחברות: ' + error.message);
-            }
-        };
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      currentUser = userCredential.user;
 
-        window.loginWithGoogle = async () => {
-            try {
-                const result = await signInWithPopup(auth, googleProvider);
-                currentUser = result.user;
-                
-                document.getElementById('userEmail').textContent = currentUser.email;
-                
-                const emailSent = await onLoginDetected(currentUser.email);
-                if (emailSent) {
-                    console.log('מייל התחברות נשלח בהצלחה');
-                } else {
-                    console.log('מייל התחברות לא נשלח עקב שגיאה.');
-                }
-                
-                switchToApp();
+      document.getElementById('userEmail').textContent = currentUser.email;
 
-            } catch (error) {
-                console.error('Google login error:', error);
-                alert('שגיאה בהתחברות עם גוגל: ' + error.message);
-            }
-        };
-                
-};
-                
-                switchToApp();
-                
-            } catch (error) {
-                console.error('Google login error:', error);
-                alert('שגיאה בהתחברות עם Google: ' + error.message);
-            }
-        };
+      const emailSent = await onLoginDetected(email);
+      if (emailSent) {
+        console.log('מייל התחברות נשלח בהצלחה');
+      } else {
+        console.log('מייל התחברות לא נשלח עקב שגיאה.');
+      }
 
-        // פונקציה לקבלת התאריך והשעה הנוכחיים
-        function getCurrentDateTime() {
-            const now = new Date();
-            now.setHours(now.getHours() + 2); // התאמה לאזור זמן ישראל
+      switchToApp();
+      await loadUserData();
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('שגיאה בהתחברות: ' + error.message);
+    }
+  };
+
+  window.loginWithGoogle = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      currentUser = result.user;
+
+      document.getElementById('userEmail').textContent = currentUser.email;
+
+      const emailSent = await onLoginDetected(currentUser.email);
+      if (emailSent) {
+        console.log('מייל התחברות נשלח בהצלחה');
+      } else {
+        console.log('מייל התחברות לא נשלח עקב שגיאה.');
+      }
+
+      switchToApp();
+      await loadUserData(); // כדאי לטעון נתונים גם אחרי התחברות עם גוגל
+
+    } catch (error) {
+      console.error('Google login error:', error);
+      alert('שגיאה בהתחברות עם גוגל: ' + error.message);
+    }
+  };
+
+  // פונקציה לקבלת התאריך והשעה הנוכחיים
+  function getCurrentDateTime() {
+    const now = new Date();
+    now.setHours(now.getHours() + 2); // התאמה לאזור זמן ישראל
+    return now; // אם את מתכוונת להשתמש בערך הזה, כדאי להחזיר אותו
+  }
             
             const year = now.getUTCFullYear();
             const month = String(now.getUTCMonth() + 1).padStart(2, '0');
