@@ -298,38 +298,48 @@ try {
                 await saveUserData(newBalance, newTransactions);
                 
 console.log('בתוך saveTransaction, לפני onTransactionDetected, ערך currentUser:', currentUser);
-        try {
-            const emailSent = await onTransactionDetected({
-                amount: transaction.amount,
-                description: transaction.description || 'ללא תיאור',
-                type: transaction.type,
-                newBalance: newBalance
-            });
-            if (emailSent) {
-                console.log('מייל עסקה נשלח בהצלחה');
-            } else {
-                console.log('מייל עסקה לא נשלח עקב שגיאה.');
-            }
-        } catch (emailError) {
-            console.error('שגיאה בשליחת המייל:', emailError);
-        }
 
-        try {
-            const userRef = doc(db, 'users', currentUser.uid);
-            await updateDoc(userRef, {
-                balance: newBalance,
-                transactions: arrayUnion(transaction)
-            });
-            currentUser.balance = newBalance; // עדכון המשתנה הגלובלי
-            updateBalanceDisplay();
-            displayMessage(currentTransactionType === 'income' ? 'הכנסה נשמרה' : 'הוצאה נשמרה', 'success');
-            clearTransactionForm();
-            closeModal();
-            loadUserData();
-        } catch (error) {
-            console.error('Error saving transaction:', error);
-            alert('שגיאה בשמירת העסקה. נא לנסות שוב.');
-        }
+try {
+    const emailSent = await onTransactionDetected({
+        amount: transaction.amount,
+        description: transaction.description || 'ללא תיאור',
+        type: transaction.type,
+        newBalance: newBalance
+    });
+    if (emailSent) {
+        console.log('מייל עסקה נשלח בהצלחה');
+    } else {
+        console.log('מייל עסקה לא נשלח עקב שגיאה.');
+    }
+} catch (emailError) {
+    console.error('שגיאה בשליחת המייל:', emailError);
+}
+
+try {
+    // בדיקה אם currentUser מוגדר
+    if (!currentUser || !currentUser.uid) {
+        throw new Error('לא נמצא משתמש תקין');
+    }
+
+    const userRef = doc(db, 'users', currentUser.uid);
+    await updateDoc(userRef, {
+        balance: newBalance,
+        transactions: arrayUnion(transaction)
+    });
+    currentUser.balance = newBalance; // עדכון המשתנה הגלובלי
+    updateBalanceDisplay();
+    
+    // ודא ש currentTransactionType מוגדר לפני השימוש
+    const message = currentTransactionType === 'income' ? 'הכנסה נשמרה' : 'הוצאה נשמרה';
+    displayMessage(message, 'success');
+    
+    clearTransactionForm();
+    closeModal();
+    loadUserData();
+} catch (error) {
+    console.error('שגיאה בשמירת העסקה:', error);
+    alert('שגיאה בשמירת העסקה. נא לנסות שוב.');
+}
     };
 
                 updateUI(newBalance, newTransactions);
