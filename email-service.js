@@ -15,41 +15,37 @@ function isValidEmail(email) {
 // פונקציה שמחזירה את התאריך והשעה הנוכחיים בפורמט הרצוי
 function getCurrentDateTime() {
     const now = new Date();
-    now.setHours(now.getHours() + 2); // התאמה לאזור זמן ישראל
-    
+    // כבר UTC, אין צורך בהזזה נוספת אם השרת של EmailJS מצפה ל-UTC
     const year = now.getUTCFullYear();
     const month = String(now.getUTCMonth() + 1).padStart(2, '0');
     const day = String(now.getUTCDate()).padStart(2, '0');
     const hours = String(now.getUTCHours()).padStart(2, '0');
     const minutes = String(now.getUTCMinutes()).padStart(2, '0');
     const seconds = String(now.getUTCSeconds()).padStart(2, '0');
-    
+
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
 // פונקציה לשליחת מייל עם דיבאג מפורט
-async function sendEmailWithDetailedLogging(userData, templateId, additionalData = {}) {
-    // הפקת האימייל מהמשתמש המחובר
-    const email = document.getElementById('userEmail').textContent;
-
+async function sendEmailWithDetailedLogging(userEmail, templateId, additionalData = {}) {
     // בדיקות תקינות
-    if (!email || email.trim() === '') {
+    if (!userEmail || userEmail.trim() === '') {
         console.error('שגיאה: כתובת המייל ריקה');
         return false;
     }
 
-    if (!isValidEmail(email)) {
-        console.error(`שגיאה: כתובת המייל ${email} אינה תקינה`);
+    if (!isValidEmail(userEmail)) {
+        console.error(`שגיאה: כתובת המייל ${userEmail} אינה תקינה`);
         return false;
     }
 
     try {
         // הכנת נתוני המייל
         const emailData = {
-            to_email: email.trim(),
+            to_email: userEmail.trim(),
             from_name: "Finance Manager",
-            display_name: email.split('@')[0],
-            user_login: email.split('@')[0],
+            display_name: userEmail.split('@')[0],
+            user_login: userEmail.split('@')[0],
             local_time: getCurrentDateTime(),
             ...additionalData
         };
@@ -64,8 +60,8 @@ async function sendEmailWithDetailedLogging(userData, templateId, additionalData
 
         // שליחת המייל
         const response = await emailjs.send(
-            emailjsConfig.SERVICE_ID, 
-            templateId, 
+            emailjsConfig.SERVICE_ID,
+            templateId,
             emailData
         );
 
@@ -79,27 +75,39 @@ async function sendEmailWithDetailedLogging(userData, templateId, additionalData
 
 // פונקציות עיקריות לשליחת מייל
 async function onLoginDetected() {
-    return sendEmailWithDetailedLogging(
-        {}, 
-        emailjsConfig.LOGIN_TEMPLATE
-    );
+    // קבל את האימייל מהמשתנה הגלובלי currentUser
+    if (window.currentUser && window.currentUser.email) {
+        return sendEmailWithDetailedLogging(
+            window.currentUser.email,
+            emailjsConfig.LOGIN_TEMPLATE
+        );
+    } else {
+        console.error('שגיאה: משתמש מחובר לא זמין או שאין לו כתובת מייל.');
+        return false;
+    }
 }
 
 async function onTransactionDetected(transactionDetails) {
-    return sendEmailWithDetailedLogging(
-        {}, 
-        emailjsConfig.TRANSACTION_TEMPLATE, 
-        {
-            amount: transactionDetails.amount,
-            description: transactionDetails.description || 'ללא תיאור',
-            new_balance: transactionDetails.newBalance,
-            transaction_type: transactionDetails.type === 'income' ? 'הכנסה' : 'הוצאה',
-            local_time: getCurrentDateTime()
-        }
-    );
+    // קבל את האימייל מהמשתנה הגלובלי currentUser
+    if (window.currentUser && window.currentUser.email) {
+        return sendEmailWithDetailedLogging(
+            window.currentUser.email,
+            emailjsConfig.TRANSACTION_TEMPLATE,
+            {
+                amount: transactionDetails.amount,
+                description: transactionDetails.description || 'ללא תיאור',
+                new_balance: transactionDetails.newBalance,
+                transaction_type: transactionDetails.type === 'income' ? 'הכנסה' : 'הוצאה',
+                local_time: getCurrentDateTime()
+            }
+        );
+    } else {
+        console.error('שגיאה: משתמש מחובר לא זמין או שאין לו כתובת מייל.');
+        return false;
+    }
 }
 
-// אתחול EmailJS 
+// אתחול EmailJS
 function initEmailJS() {
     if (typeof emailjs !== 'undefined') {
         try {
@@ -114,6 +122,5 @@ function initEmailJS() {
 // קרא לפונקציית האתחול
 initEmailJS();
 
-// ייצוא הפונקציות
-window.onLoginDetected = onLoginDetected;
-window.onTransactionDetected = onTransactionDetected;
+// אין צורך לייצא את הפונקציות דרך window, מכיוון שהן מוגדרות בקובץ נפרד
+// והסקריפט הזה נטען ישירות ב-HTML.
