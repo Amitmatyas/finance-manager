@@ -297,21 +297,40 @@ try {
             try {
                 await saveUserData(newBalance, newTransactions);
                 
-try {
-    const emailSent = await onTransactionDetected({
-        amount: transaction.amount,
-        description: transaction.description || 'ללא תיאור',
-        type: transaction.type,
-        newBalance: newBalance
-    });
-    if (emailSent) {
-        console.log('מייל עסקה נשלח בהצלחה');
-    } else {
-        console.log('מייל עסקה לא נשלח עקב שגיאה.');
-    }
-} catch (emailError) {
-    console.error('שגיאה בשליחת המייל:', emailError);
-}
+console.log('בתוך saveTransaction, לפני onTransactionDetected, ערך currentUser:', currentUser);
+        try {
+            const emailSent = await onTransactionDetected({
+                amount: transaction.amount,
+                description: transaction.description || 'ללא תיאור',
+                type: transaction.type,
+                newBalance: newBalance
+            });
+            if (emailSent) {
+                console.log('מייל עסקה נשלח בהצלחה');
+            } else {
+                console.log('מייל עסקה לא נשלח עקב שגיאה.');
+            }
+        } catch (emailError) {
+            console.error('שגיאה בשליחת המייל:', emailError);
+        }
+
+        try {
+            const userRef = doc(db, 'users', currentUser.uid);
+            await updateDoc(userRef, {
+                balance: newBalance,
+                transactions: arrayUnion(transaction)
+            });
+            currentUser.balance = newBalance; // עדכון המשתנה הגלובלי
+            updateBalanceDisplay();
+            displayMessage(currentTransactionType === 'income' ? 'הכנסה נשמרה' : 'הוצאה נשמרה', 'success');
+            clearTransactionForm();
+            closeModal();
+            loadUserData();
+        } catch (error) {
+            console.error('Error saving transaction:', error);
+            alert('שגיאה בשמירת העסקה. נא לנסות שוב.');
+        }
+    };
 
                 updateUI(newBalance, newTransactions);
                 closeModal();
