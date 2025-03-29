@@ -75,12 +75,21 @@ async function sendEmailWithDetailedLogging(userEmail, templateId, additionalDat
 
 // פונקציות עיקריות לשליחת מייל
 async function onLoginDetected() {
-    // קבל את האימייל מהמשתנה הגלובלי currentUser
+    console.log('onLoginDetected נקראה');
+    console.log('ערך window.currentUser:', window.currentUser);
     if (window.currentUser && window.currentUser.email) {
-        return sendEmailWithDetailedLogging(
+        console.log('כתובת המייל של המשתמש המחובר:', window.currentUser.email);
+        const emailSent = await sendEmailWithDetailedLogging(
             window.currentUser.email,
             emailjsConfig.LOGIN_TEMPLATE
         );
+        if (emailSent) {
+            console.log('מייל התחברות נשלח בהצלחה');
+            return true;
+        } else {
+            console.log('מייל התחברות לא נשלח עקב שגיאה.');
+            return false;
+        }
     } else {
         console.error('שגיאה: משתמש מחובר לא זמין או שאין לו כתובת מייל.');
         return false;
@@ -88,9 +97,11 @@ async function onLoginDetected() {
 }
 
 async function onTransactionDetected(transactionDetails) {
-    // קבל את האימייל מהמשתנה הגלובלי currentUser
+    console.log('onTransactionDetected נקראה עם פרטים:', transactionDetails);
+    console.log('ערך window.currentUser:', window.currentUser);
     if (window.currentUser && window.currentUser.email) {
-        return sendEmailWithDetailedLogging(
+        console.log('כתובת המייל של המשתמש המחובר:', window.currentUser.email);
+        const emailSent = await sendEmailWithDetailedLogging(
             window.currentUser.email,
             emailjsConfig.TRANSACTION_TEMPLATE,
             {
@@ -101,6 +112,13 @@ async function onTransactionDetected(transactionDetails) {
                 local_time: getCurrentDateTime()
             }
         );
+        if (emailSent) {
+            console.log('מייל עסקה נשלח בהצלחה');
+            return true;
+        } else {
+            console.log('מייל עסקה לא נשלח עקב שגיאה.');
+            return false;
+        }
     } else {
         console.error('שגיאה: משתמש מחובר לא זמין או שאין לו כתובת מייל.');
         return false;
