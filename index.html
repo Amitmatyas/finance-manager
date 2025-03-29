@@ -297,16 +297,18 @@ try {
             try {
                 await saveUserData(newBalance, newTransactions);
                 
-console.log('בתוך saveTransaction, לפני onTransactionDetected, ערך currentUser:', currentUser);
+console.log('בתוך saveTransaction, לפני שליחת מייל, ערך currentUser:', currentUser);
 
+let emailSentSuccessfully = false;
 try {
-    const emailSent = await onTransactionDetected({
+    const emailResult = await onTransactionDetected({
         amount: transaction.amount,
         description: transaction.description || 'ללא תיאור',
         type: transaction.type,
         newBalance: newBalance
     });
-    if (emailSent) {
+    emailSentSuccessfully = !!emailResult; // מוודאים שהערך הוא בוליאני אמיתי
+    if (emailSentSuccessfully) {
         console.log('מייל עסקה נשלח בהצלחה');
     } else {
         console.log('מייל עסקה לא נשלח עקב שגיאה.');
@@ -318,7 +320,10 @@ try {
 try {
     // בדיקה אם currentUser מוגדר
     if (!currentUser || !currentUser.uid) {
-        throw new Error('לא נמצא משתמש תקין');
+        const errorMessage = 'לא נמצא משתמש תקין';
+        console.error('שגיאה בשמירת העסקה:', errorMessage);
+        alert('שגיאה בשמירת העסקה. נא להתחבר מחדש.');
+        return; // חשוב לעצור את המשך הפעולה אם אין משתמש
     }
 
     const userRef = doc(db, 'users', currentUser.uid);
@@ -328,11 +333,11 @@ try {
     });
     currentUser.balance = newBalance; // עדכון המשתנה הגלובלי
     updateBalanceDisplay();
-    
+
     // ודא ש currentTransactionType מוגדר לפני השימוש
     const message = currentTransactionType === 'income' ? 'הכנסה נשמרה' : 'הוצאה נשמרה';
     displayMessage(message, 'success');
-    
+
     clearTransactionForm();
     closeModal();
     loadUserData();
