@@ -201,12 +201,16 @@
                 
                 document.getElementById('userEmail').textContent = currentUser.email;
                 
-                try {
-                    await onLoginDetected();
-                    console.log('מייל התחברות נשלח בהצלחה');
-                } catch (emailError) {
-                    console.error('שגיאה בשליחת מייל התחברות:', emailError);
-                }
+try {
+    const emailSent = await onLoginDetected();
+    if (emailSent) {
+        console.log('מייל התחברות נשלח בהצלחה');
+    } else {
+        console.log('מייל התחברות לא נשלח עקב שגיאה.');
+    }
+} catch (emailError) {
+    console.error('שגיאה בשליחת מייל התחברות:', emailError);
+}
                 
                 switchToApp();
                 await loadUserData();
@@ -223,12 +227,16 @@
                 
                 document.getElementById('userEmail').textContent = currentUser.email;
                 
-                try {
-                    await onLoginDetected();
-                    console.log('מייל התחברות נשלח בהצלחה');
-                } catch (emailError) {
-                    console.error('שגיאה בשליחת מייל התחברות:', emailError);
-                }
+try {
+    const emailSent = await onLoginDetected();
+    if (emailSent) {
+        console.log('מייל התחברות נשלח בהצלחה');
+    } else {
+        console.log('מייל התחברות לא נשלח עקב שגיאה.');
+    }
+} catch (emailError) {
+    console.error('שגיאה בשליחת מייל התחברות:', emailError);
+}
                 
                 switchToApp();
                 
@@ -289,16 +297,21 @@
             try {
                 await saveUserData(newBalance, newTransactions);
                 
-                try {
-                    await onTransactionDetected({
-                        amount: transaction.amount,
-                        description: transaction.description || 'ללא תיאור',
-                        type: transaction.type,
-                        newBalance: newBalance
-                    });
-                } catch (emailError) {
-                    console.error('שגיאה בשליחת המייל:', emailError);
-                }
+try {
+    const emailSent = await onTransactionDetected({
+        amount: transaction.amount,
+        description: transaction.description || 'ללא תיאור',
+        type: transaction.type,
+        newBalance: newBalance
+    });
+    if (emailSent) {
+        console.log('מייל עסקה נשלח בהצלחה');
+    } else {
+        console.log('מייל עסקה לא נשלח עקב שגיאה.');
+    }
+} catch (emailError) {
+    console.error('שגיאה בשליחת המייל:', emailError);
+}
 
                 updateUI(newBalance, newTransactions);
                 closeModal();
