@@ -185,67 +185,61 @@
         let historicalData = {};
         let currentTransactionType = '';
 
-        // פונקציות אימות
-        window.login = async () => {
-            const email = document.getElementById('emailInput').value;
-            const password = document.getElementById('passwordInput').value;
+  // פונקציות אימות
+        window.login = async () => {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
 
-            if (!email || !password) {
-                alert('אנא הזן אימייל וסיסמה');
-                return;
-            }
+            if (!email || !password) {
+                alert('אנא הזן אימייל וסיסמה');
+                return;
+            }
 
-            try {
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                currentUser = userCredential.user;
-                
-                document.getElementById('userEmail').textContent = currentUser.email;
-                
-try {
-    const emailSent = await onLoginDetected();
-    if (emailSent) {
-        console.log('מייל התחברות נשלח בהצלחה');
-    } else {
-        console.log('מייל התחברות לא נשלח עקב שגיאה.');
-    }
-} catch (emailError) {
-    console.error('שגיאה בשליחת מייל התחברות:', emailError);
-}
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                currentUser = userCredential.user;
+                
+                document.getElementById('userEmail').textContent = currentUser.email;
+                
+                const emailSent = await onLoginDetected(email);
+                if (emailSent) {
+                    console.log('מייל התחברות נשלח בהצלחה');
+                } else {
+                    console.log('מייל התחברות לא נשלח עקב שגיאה.');
+                }
+                
+                switchToApp();
+                await loadUserData();
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('שגיאה בהתחברות: ' + error.message);
+            }
+        };
+
+        window.loginWithGoogle = async () => {
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                currentUser = result.user;
+                
+                document.getElementById('userEmail').textContent = currentUser.email;
+                
+                const emailSent = await onLoginDetected(currentUser.email);
+                if (emailSent) {
+                    console.log('מייל התחברות נשלח בהצלחה');
+                } else {
+                    console.log('מייל התחברות לא נשלח עקב שגיאה.');
+                }
+                
+                switchToApp();
+
+            } catch (error) {
+                console.error('Google login error:', error);
+                alert('שגיאה בהתחברות עם גוגל: ' + error.message);
+            }
+        };
                 
                 switchToApp();
-                await loadUserData();
-            } catch (error) {
-                console.error('Login error:', error);
-                alert('שגיאה בהתחברות: ' + error.message);
-            }
-        };
-
-        window.loginWithGoogle = async () => {
-            try {
-                const result = await signInWithPopup(auth, googleProvider);
-                currentUser = result.user;
                 
-                document.getElementById('userEmail').textContent = currentUser.email;
-                
-try {
-    const emailSent = await onLoginDetected();
-    if (emailSent) {
-        console.log('מייל התחברות נשלח בהצלחה');
-    } else {
-        console.log('מייל התחברות לא נשלח עקב שגיאה.');
-    }
-} catch (emailError) {
-    console.error('שגיאה בשליחת מייל התחברות:', emailError);
-}
-                
-                switchToApp();
-                
-                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-                if (!userDoc.exists()) {
-                    await initializeUserData();
-                } else {
-                    await loadUserData();
-                }
             } catch (error) {
                 console.error('Google login error:', error);
                 alert('שגיאה בהתחברות עם Google: ' + error.message);
