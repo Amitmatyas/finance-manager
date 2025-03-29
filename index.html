@@ -239,52 +239,56 @@
     }
   };
 
-  // פונקציה לקבלת התאריך והשעה הנוכחיים
-  function getCurrentDateTime() {
-    const now = new Date();
-    now.setHours(now.getHours() + 2); // התאמה לאזור זמן ישראל
-    return now; // אם את מתכוונת להשתמש בערך הזה, כדאי להחזיר אותו
+  // פונקציה לקבלת התאריך והשעה הנוכחיים בפורמט YYYY-MM-DD HH:MM:SS
+function getCurrentDateTime() {
+  const now = new Date();
+  now.setHours(now.getHours() + 2); // התאמה לאזור זמן ישראל
+
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
+// פונקציית שמירת עסקה
+window.saveTransaction = async () => {
+  const amount = parseFloat(document.getElementById('amountInput').value);
+  const description = document.getElementById('descriptionInput').value;
+
+  if (!amount || isNaN(amount)) {
+    alert('אנא הזן סכום תקין');
+    return;
   }
-            
-            const year = now.getUTCFullYear();
-            const month = String(now.getUTCMonth() + 1).padStart(2, '0');
-            const day = String(now.getUTCDate()).padStart(2, '0');
-            const hours = String(now.getUTCHours()).padStart(2, '0');
-            const minutes = String(now.getUTCMinutes()).padStart(2, '0');
-            const seconds = String(now.getUTCSeconds()).padStart(2, '0');
-            
-            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-        }
 
-        // פונקציית שמירת עסקה
-        window.saveTransaction = async () => {
-            const amount = parseFloat(document.getElementById('amountInput').value);
-            const description = document.getElementById('descriptionInput').value;
-            
-            if (!amount || isNaN(amount)) {
-                alert('אנא הזן סכום תקין');
-                return;
-            }
+  if (!currentUser || !currentUser.email) {
+    alert('אנא התחבר מחדש למערכת');
+    return;
+  }
 
-            if (!currentUser || !currentUser.email) {
-                alert('אנא התחבר מחדש למערכת');
-                return;
-            }
+  const transaction = {
+    type: currentTransactionType,
+    amount: Math.abs(amount),
+    description,
+    date: getCurrentDateTime() // עכשיו הפונקציה תחזיר את הפורמט הרצוי
+  };
 
-            const transaction = {
-                type: currentTransactionType,
-                amount: Math.abs(amount),
-                description,
-                date: getCurrentDateTime()
-            };
+  const newTransactions = [...transactions, transaction];
+  const newBalance = currentTransactionType === 'income'
+    ? balance + amount
+    : balance - amount;
 
-            const newTransactions = [...transactions, transaction];
-            const newBalance = currentTransactionType === 'income' 
-                ? balance + amount 
-                : balance - amount;
-
-            try {
-                await saveUserData(newBalance, newTransactions);
+  try {
+    await saveUserData(newBalance, newTransactions);
+    // ... המשך הקוד של שמירת העסקה ...
+  } catch (error) {
+    console.error('שגיאה בשמירת העסקה:', error);
+    alert('שגיאה בשמירת העסקה: ' + error.message);
+  }
+};
                 
 window.saveTransaction = async () => {
             const amount = parseFloat(document.getElementById('amountInput').value);
