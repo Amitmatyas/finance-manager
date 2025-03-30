@@ -372,12 +372,15 @@ try {
         };
 
 updateUI(newBalance, newTransactions);
-          closeModal();
-        } catch (error) {
-          console.error('Error saving transaction:', error);
-          alert('שגיאה בשמירת העסקה. נא לנסות שוב.');
-        }
-      };
+                closeModal();
+            } catch (error) {
+                console.error('שגיאה בשמירת העסקה:', error);
+                alert('שגיאה בשמירת העסקה. נא לנסות שוב.');
+            }
+
+            updateUI(newBalance, newTransactions);
+            closeModal();
+        };
         
         // פונקציות איפוס סיסמה
         window.resetPassword = () => {
