@@ -12,15 +12,16 @@ function isValidEmail(email) {
     return email && typeof email === 'string' && emailRegex.test(email.trim());
 }
 
-// פונקציה שמחזירה את התאריך והשעה הנוכחיים בפורמט הרצוי
+// פונקציה שמחזירה את התאריך והשעה הנוכחיים בפורמט הרצוי (שעון ישראל)
 function getCurrentDateTime() {
     const now = new Date();
-    const year = now.getUTCFullYear();
-    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(now.getUTCDate()).padStart(2, '0');
-    const hours = String(now.getUTCHours()).padStart(2, '0');
-    const minutes = String(now.getUTCMinutes()).padStart(2, '0');
-    const seconds = String(now.getUTCSeconds()).padStart(2, '0');
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+
+    // השתמש ב-toLocaleTimeString כדי לקבל את השעה המקומית (ישראל)
+    const localTimeString = now.toLocaleTimeString('he-IL', { hour12: false });
+    const [hours, minutes, seconds] = localTimeString.split(':');
 
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
@@ -41,13 +42,15 @@ async function sendEmailWithDetailedLogging(to_email, templateId, additionalData
     try {
         // הכנת נתוני המייל
         const emailData = {
-            to_email: to_email.trim(), // הגדרנו את זה ראשון
+            to_email: to_email.trim(),
             from_name: "Finance Manager",
             display_name: to_email.split('@')[0],
             user_login: to_email.split('@')[0],
             local_time: getCurrentDateTime(),
-            ...additionalData,
-            // אנחנו בכוונה לא מוסיפים כאן 'email' בנפרד כרגע
+            ip_address: additionalData.loginDetails?.ipAddress || "אין נתונים",
+            device_model: additionalData.loginDetails?.deviceModel || "אין נתונים",
+            device_type: additionalData.loginDetails?.deviceType || "אין נתונים",
+            ...additionalData
         };
 
         console.log("מנסה לשלוח מייל עם הנתונים המפורטים:", JSON.stringify(emailData, null, 2));
@@ -74,8 +77,8 @@ async function sendEmailWithDetailedLogging(to_email, templateId, additionalData
 }
 
 // פונקציות עיקריות לשליחת מייל
-async function onLoginDetected(email) { // מקבל כעת 'email' כארגומנט
-    console.log('onLoginDetected נקראה עם אימייל:', email);
+async function onLoginDetected(email, loginDetails = {}) { // מקבל כעת גם loginDetails
+    console.log('onLoginDetected נקראה עם אימייל:', email, ' ופרטי התחברות:', loginDetails);
 
     if (!email) {
         console.error('שגיאה: לא סופק אימייל למשלוח הודעת התחברות.');
@@ -84,7 +87,8 @@ async function onLoginDetected(email) { // מקבל כעת 'email' כארגומ�
 
     const emailSent = await sendEmailWithDetailedLogging(
         email,
-        emailjsConfig.LOGIN_TEMPLATE
+        emailjsConfig.LOGIN_TEMPLATE,
+        { loginDetails: loginDetails } // מעביר את פרטי ההתחברות
     );
     if (emailSent) {
         console.log('מייל התחברות נשלח בהצלחה');
