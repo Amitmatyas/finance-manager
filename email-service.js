@@ -42,8 +42,7 @@ async function sendEmailWithDetailedLogging(to_email, templateId, additionalData
     try {
         // הכנת נתוני המייל
         const emailData = {
-            to_email: to_email.trim(),
-            email: to_email.trim(), // הוספנו את זה שוב
+            to_email: to_email.trim(), // הגדרנו את זה ראשון
             from_name: "Finance Manager",
             display_name: to_email.split('@')[0],
             user_login: to_email.split('@')[0],
@@ -105,6 +104,7 @@ async function onTransactionDetected({ amount, description, type, newBalance, us
 
     if (userEmail) {
         console.log('כתובת המייל של המשתמש:', userEmail);
+        const transactionTypeHebrew = type === 'income' ? 'הכנסה' : 'הוצאה';
         const emailSent = await sendEmailWithDetailedLogging(
             userEmail,
             emailjsConfig.TRANSACTION_TEMPLATE,
@@ -112,7 +112,7 @@ async function onTransactionDetected({ amount, description, type, newBalance, us
                 amount: amount,
                 description: description || 'ללא תיאור',
                 new_balance: newBalance,
-                transaction_type: type === 'income' ? 'הכנסה' : 'הוצאה',
+                transaction_type: transactionTypeHebrew, // שימוש במשתנה העברי
                 local_time: getCurrentDateTime()
             }
         );
