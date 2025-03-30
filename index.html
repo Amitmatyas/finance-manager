@@ -256,38 +256,62 @@ function getCurrentDateTime() {
 
 // פונקציית שמירת עסקה
 window.saveTransaction = async () => {
-  const amount = parseFloat(document.getElementById('amountInput').value);
-  const description = document.getElementById('descriptionInput').value;
+    const amount = parseFloat(document.getElementById('amountInput').value);
+    const description = document.getElementById('descriptionInput').value;
 
-  if (!amount || isNaN(amount)) {
-    alert('אנא הזן סכום תקין');
-    return;
-  }
+    if (!amount || isNaN(amount)) {
+        alert('אנא הזן סכום תקין');
+        return;
+    }
 
-  if (!currentUser || !currentUser.email) {
-    alert('אנא התחבר מחדש למערכת');
-    return;
-  }
+    if (!currentUser || !currentUser.email) {
+        alert('אנא התחבר מחדש למערכת');
+        return;
+    }
 
-  const transaction = {
-    type: currentTransactionType,
-    amount: Math.abs(amount),
-    description,
-    date: getCurrentDateTime() // עכשיו הפונקציה תחזיר את הפורמט הרצוי
-  };
+    const transaction = {
+        type: currentTransactionType,
+        amount: Math.abs(amount),
+        description,
+        date: getCurrentDateTime()
+    };
 
-  const newTransactions = [...transactions, transaction];
-  const newBalance = currentTransactionType === 'income'
-    ? balance + amount
-    : balance - amount;
+    const newTransactions = [...transactions, transaction];
+    const newBalance = currentTransactionType === 'income'
+        ? balance + amount
+        : balance - amount;
 
-  try {
-    await saveUserData(newBalance, newTransactions);
-    // ... המשך הקוד של שמירת העסקה ...
-  } catch (error) {
-    console.error('שגיאה בשמירת העסקה:', error);
-    alert('שגיאה בשמירת העסקה: ' + error.message);
-  }
+    try {
+        console.log('בתוך saveTransaction, לפני שליחת מייל, ערך currentUser:', currentUser);
+        console.log('בתוך saveTransaction, לפני שליחת מייל, ערך currentUser.email:', currentUser.email); // <-- מוודאים שהאימייל קיים
+
+        let emailSentSuccessfully = false;
+        try {
+            const emailResult = await onTransactionDetected({
+                amount: transaction.amount,
+                description: transaction.description || 'ללא תיאור',
+                type: transaction.type,
+                newBalance: newBalance,
+                userEmail: currentUser.email // מעבירים את כתובת המייל
+            });
+            emailSentSuccessfully = !!emailResult;
+            if (emailSentSuccessfully) {
+                console.log('מייל עסקה נשלח בהצלחה');
+            } else {
+                console.log('מייל עסקה לא נשלח עקב שגיאה.');
+            }
+        } catch (emailError) {
+            console.error('שגיאה בשליחת המייל:', emailError);
+        }
+
+        await saveUserData(newBalance, newTransactions); // קריאה אחת לשמירת נתונים
+        updateUI(newBalance, newTransactions);
+        closeModal();
+
+    } catch (error) {
+        console.error('שגיאה בשמירת העסקה:', error);
+        alert('שגיאה בשמירת העסקה: ' + error.message);
+    }
 };
                 
 window.saveTransaction = async () => {
