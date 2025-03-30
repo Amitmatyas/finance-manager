@@ -285,23 +285,18 @@ window.saveTransaction = async () => {
         console.log('בתוך saveTransaction, לפני שליחת מייל, ערך currentUser:', currentUser);
         console.log('בתוך saveTransaction, לפני שליחת מייל, ערך currentUser.email:', currentUser.email); // <-- מוודאים שהאימייל קיים
 
-        let emailSentSuccessfully = false;
-        try {
-            const emailResult = await onTransactionDetected({
-                amount: transaction.amount,
-                description: transaction.description || 'ללא תיאור',
-                type: transaction.type,
-                newBalance: newBalance,
-                userEmail: currentUser.email // מעבירים את כתובת המייל
-            });
-            emailSentSuccessfully = !!emailResult;
-            if (emailSentSuccessfully) {
-                console.log('מייל עסקה נשלח בהצלחה');
-            } else {
-                console.log('מייל עסקה לא נשלח עקב שגיאה.');
-            }
-        } catch (emailError) {
-            console.error('שגיאה בשליחת המייל:', emailError);
+const transactionTypeHebrew = currentTransactionType === 'income' ? 'הכנסה' : 'הוצאה';
+        const emailResult = await onTransactionDetected({
+            amount: transaction.amount,
+            description: transaction.description || 'ללא תיאור',
+            type: currentTransactionType,
+            newBalance: newBalance,
+            userEmail: currentUser.email
+        });
+        if (emailResult) {
+            alert(`העסקה בוצעה בהצלחה. בוצעה ${transactionTypeHebrew} חדשה בחשבונך.`);
+        } else {
+            alert('העסקה בוצעה, אך הייתה בעיה בשליחת המייל.');
         }
 
         await saveUserData(newBalance, newTransactions); // קריאה אחת לשמירת נתונים
