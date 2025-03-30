@@ -339,19 +339,43 @@ window.saveTransaction = async () => {
                     console.error('שגיאה בשליחת המייל:', emailError);
                 }
 
-                // בדיקה אם currentUser מוגדר
+               // בדיקה אם currentUser מוגדר
                 if (!currentUser || !currentUser.uid) {
+                    console.error('שגיאה: משתמש לא מחובר');
+                    alert('אנא התחבר מחדש למערכת.');
+                    return;
+                }
 
-updateUI(newBalance, newTransactions);
-                closeModal();
-            } catch (error) {
-                console.error('שגיאה בשמירת העסקה:', error);
-                alert('שגיאה בשמירת העסקה. נא לנסות שוב.');
-            }
+                try {
+                    await saveUserData(newBalance, newTransactions);
 
-            updateUI(newBalance, newTransactions);
-            closeModal();
-        };
+                    console.log('בתוך saveTransaction, לפני שליחת מייל, ערך currentUser:', currentUser);
+
+                    let emailSentSuccessfully = false;
+                    try {
+                        const emailResult = await onTransactionDetected({
+                            amount: transaction.amount,
+                            description: transaction.description || 'ללא תיאור',
+                            type: transaction.type,
+                            newBalance: newBalance
+                        });
+                        emailSentSuccessfully = !!emailResult; // מוודאים שהערך הוא בוליאני אמיתי
+                        if (emailSentSuccessfully) {
+                            console.log('מייל עסקה נשלח בהצלחה');
+                        } else {
+                            console.log('מייל עסקה לא נשלח עקב שגיאה.');
+                        }
+                    } catch (emailError) {
+                        console.error('שגיאה בשליחת המייל:', emailError);
+                    }
+
+                    updateUI(newBalance, newTransactions);
+                    closeModal();
+                } catch (error) {
+                    console.error('שגיאה בשמירת העסקה:', error);
+                    alert('שגיאה בשמירת העסקה. נא לנסות שוב.');
+                }
+            };
         
         // פונקציות איפוס סיסמה
         window.resetPassword = () => {
