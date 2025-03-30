@@ -710,14 +710,20 @@ document.getElementById('sendEmailLinkBtn').addEventListener('click', window.sen
         
 </script>
     
+ </script>
+    
         </div>
     </div>
     <button id="openChatFloatingBottom" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #007bff; color: white; border: none; border-radius: 5px; padding: 10px 20px; cursor: pointer; z-index: 999; font-size: 1em; box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);">התכתב עם היועץ הפיננסי שלך</button>
 
-    <div id="floatingChatWindow" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 1px solid #ccc; background-color: #fff; box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3); z-index: 1010; width: 80%; max-width: 600px; height: 80%; max-height: 500px;">
+    <div id="floatingChatWindow" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 1px solid #ccc; background-color: #fff; box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3); z-index: 1010; width: 80%; max-width: 600px; height: 80%; max-height: 700px; border-radius: 10px; overflow: hidden;">
         <button id="closeChatFloating" style="position: absolute; top: 10px; right: 10px; border: none; background: none; cursor: pointer; font-size: 1.5em;">&times;</button>
-        <div id="chatbase-container" style="height: 100%; padding: 20px;">
-                    </div>
+        <iframe
+            src="https://www.chatbase.co/chatbot-iframe/RxNYEF7b_s99LgJ63l31z"
+            width="100%"
+            style="height: 100%; min-height: 700px"
+            frameborder="0"
+        ></iframe>
     </div>
 
     <div id="modalBackdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1005;"></div>
@@ -727,20 +733,11 @@ document.getElementById('sendEmailLinkBtn').addEventListener('click', window.sen
             const openChatButton = document.getElementById('openChatFloatingBottom');
             const closeChatButton = document.getElementById('closeChatFloating');
             const floatingChatWindow = document.getElementById('floatingChatWindow');
-            const chatbaseContainer = document.getElementById('chatbase-container');
             const modalBackdrop = document.getElementById('modalBackdrop');
 
             openChatButton.addEventListener('click', function() {
                 floatingChatWindow.style.display = 'block';
                 modalBackdrop.style.display = 'block'; // מציג את הרקע המחשיך
-                // טען את קוד ההטמעה של Chatbase רק כשהחלון נפתח בפעם הראשונה
-                if (!chatbaseContainer.querySelector('.chatbase-widget')) {
-                    const script = document.createElement('script');
-                    script.src = "https://www.chatbase.co/embed.min.js"; // **הנה הכתובת הנכונה**
-                    script.id = "RxNYEF7b_s99LgJ63l31z"; // **שים לב: זה ה-ID של הבוט שלך**
-                    script.domain = "www.chatbase.co";
-                    chatbaseContainer.appendChild(script);
-                }
             });
 
             closeChatButton.addEventListener('click', function() {
