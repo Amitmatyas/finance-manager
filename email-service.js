@@ -43,6 +43,7 @@ async function sendEmailWithDetailedLogging(to_email, templateId, additionalData
         // הכנת נתוני המייל
         const emailData = {
             to_email: to_email.trim(),
+            email: to_email.trim(), // הוספנו את זה שוב
             from_name: "Finance Manager",
             display_name: to_email.split('@')[0],
             user_login: to_email.split('@')[0],
