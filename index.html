@@ -349,6 +349,32 @@ window.closeResetModal = () => {
             }
         };
 
+window.sendSignInLink = async () => {
+    const email = document.getElementById('emailLinkInput').value;
+
+    if (!email) {
+        alert('נא להזין כתובת דוא"ל');
+        return;
+    }
+
+    const actionCodeSettings = {
+        url: window.location.href,
+        handleCodeInApp: true,
+    };
+
+    try {
+        await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+        alert('קישור התחברות נשלח לדוא"ל שלך');
+        window.localStorage.setItem('emailForSignIn', email);
+        document.getElementById('emailLinkFlow').classList.add('hidden');
+    } catch (error) {
+        console.error('שגיאה בשליחת קישור התחברות:', error);
+        alert('שגיאה בשליחת קישור התחברות: ' + error.message);
+    }
+};
+
+document.getElementById('sendEmailLinkBtn').addEventListener('click', window.sendSignInLink);
+        
         // פונקציית עזר לקבלת שם החודש בעברית
         function getHebrewMonthName(date) {
             return date.toLocaleString('he-IL', { month: 'long' });
@@ -620,6 +646,10 @@ window.closeResetModal = () => {
         document.getElementById('registerBtn').addEventListener('click', window.register);
         document.getElementById('googleLoginBtn').addEventListener('click', window.loginWithGoogle);
 
+        document.getElementById('emailLinkLoginBtn').addEventListener('click', () => {
+    document.getElementById('emailLinkFlow').classList.toggle('hidden');
+});
+        
         // מאזיני אירועים למקשי Enter
         document.getElementById('emailInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
@@ -648,6 +678,36 @@ window.closeResetModal = () => {
                 loadUserData();
             }
         });
+
+        window.addEventListener('load', async () => {
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+        let email = window.localStorage.getItem('emailForSignIn');
+        if (!email) {
+            email = window.prompt('אנא הזן את כתובת הדוא"ל שלך להשלמת ההתחברות');
+        }
+
+        try {
+            const result = await signInWithEmailLink(auth, email, window.location.href);
+            window.localStorage.removeItem('emailForSignIn');
+            currentUser = result.user;
+            document.getElementById('userEmail').textContent = currentUser.email;
+
+            const emailSent = await onLoginDetected(currentUser.email);
+            if (emailSent) {
+                console.log('מייל התחברות נשלח בהצלחה');
+            } else {
+                console.log('מייל התחברות לא נשלח עקב שגיאה.');
+            }
+
+            switchToApp();
+            await loadUserData();
+        } catch (error) {
+            console.error('שגיאה בהתחברות עם קישור אימייל:', error);
+            alert('שגיאה בהתחברות עם קישור אימייל: ' + error.message);
+        }
+    }
+});
+        
     </script>
 </body>
 </html>
