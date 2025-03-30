@@ -313,50 +313,6 @@ window.saveTransaction = async () => {
         alert('שגיאה בשמירת העסקה: ' + error.message);
     }
 };
-                
-window.saveTransaction = async () => {
-            const amount = parseFloat(document.getElementById('amountInput').value);
-            const description = document.getElementById('descriptionInput').value;
-
-            if (!amount || isNaN(amount)) {
-                alert('אנא הזן סכום תקין');
-                return;
-            }
-
-            if (!currentUser || !currentUser.email) {
-                alert('אנא התחבר מחדש למערכת');
-                return;
-            }
-
-            const transaction = {
-                type: currentTransactionType,
-                amount: Math.abs(amount),
-                description,
-                date: getCurrentDateTime()
-            };
-
-            const newTransactions = [...transactions, transaction];
-            const newBalance = currentTransactionType === 'income'
-                ? balance + amount
-                : balance - amount;
-
-            try {
-                await saveUserData(newBalance, newTransactions);
-
-                console.log('בתוך saveTransaction, לפני שליחת מייל, ערך currentUser:', currentUser);
-
-                let emailSentSuccessfully = false;
-                try {
-                    const emailResult = await onTransactionDetected({
-                        amount: transaction.amount,
-                        description: transaction.description || 'ללא תיאור',
-                        type: transaction.type,
-                        newBalance: newBalance,
-                        userEmail: currentUser.email // הוספנו את כתובת המייל
-                    });
-                    emailSentSuccessfully = !!emailResult; // מוודאים שהערך הוא בוליאני אמיתי
-                    if (emailSentSuccessfully) {
-                        console.log('מייל עסקה נשלח בהצלחה');
         
         // פונקציות איפוס סיסמה
         window.resetPassword = () => {
