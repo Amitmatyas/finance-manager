@@ -99,13 +99,57 @@
                     class="flex-1 bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition">
                 <span class="text-xl">➖ הוצאה</span>
             </button>
-        </div>
+       </div>
 
-        <div class="bg-gray-100 rounded-lg p-4">
-            <h2 class="text-xl font-bold mb-4 text-gray-700">היסטוריית תנועות</h2>
-            <ul id="transactions" class="space-y-2 max-h-64 overflow-y-auto"></ul>
-        </div>
+        <div class="bg-gray-100 rounded-lg p-4">
+            <h2 class="text-xl font-bold mb-4 text-gray-700">היסטוריית תנועות</h2>
+            <ul id="transactions" class="space-y-2 max-h-64 overflow-y-auto"></ul>
+        </div>
 
+        <button id="openChatButton" class="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 mt-4">
+            התכתב עם היועץ הפיננסי שלך
+        </button>
+
+        <canvas id="chartArea" class="mt-6 w-full"></canvas>
+    </div>
+
+    <div id="floatingChatWindow" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 1px solid #ccc; background-color: #fff; box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3); z-index: 1010; width: 80%; max-width: 600px; height: 80%; max-height: 700px; border-radius: 10px; overflow: hidden;">
+        <button id="closeChatFloating" style="position: absolute; top: 10px; right: 10px; border: none; background: none; cursor: pointer; font-size: 1.5em;">&times;</button>
+        <iframe
+            src="https://www.chatbase.co/chatbot-iframe/RxNYEF7b_s99LgJ63l31z"
+            width="100%"
+            style="height: 100%; min-height: 700px"
+            frameborder="0"
+        ></iframe>
+    </div>
+
+    <div id="modalBackdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1005;"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const openChatButton = document.getElementById('openChatButton');
+            const closeChatButton = document.getElementById('closeChatFloating');
+            const floatingChatWindow = document.getElementById('floatingChatWindow');
+            const modalBackdrop = document.getElementById('modalBackdrop');
+
+            openChatButton.addEventListener('click', function() {
+                floatingChatWindow.style.display = 'block';
+                modalBackdrop.style.display = 'block'; // מציג את הרקע המחשיך
+            });
+
+            closeChatButton.addEventListener('click', function() {
+                floatingChatWindow.style.display = 'none';
+                modalBackdrop.style.display = 'none'; // מסתיר את הרקע המחשיך
+            });
+
+            // סגירת המודל בלחיצה על הרקע המחשיך
+            modalBackdrop.addEventListener('click', function() {
+                floatingChatWindow.style.display = 'none';
+                modalBackdrop.style.display = 'none';
+            });
+        });
+    </script>
+</body>
         <canvas id="chartArea" class="mt-6 w-full"></canvas>
     </div>
 
@@ -707,50 +751,7 @@ document.getElementById('sendEmailLinkBtn').addEventListener('click', window.sen
         }
     }
 });
-        
-</script>
-    
- </script>
-    
-        </div>
-    </div>
-    <button id="openChatFloatingBottom" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #007bff; color: white; border: none; border-radius: 5px; padding: 10px 20px; cursor: pointer; z-index: 999; font-size: 1em; box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);">התכתב עם היועץ הפיננסי שלך</button>
-
-    <div id="floatingChatWindow" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 1px solid #ccc; background-color: #fff; box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3); z-index: 1010; width: 80%; max-width: 600px; height: 80%; max-height: 700px; border-radius: 10px; overflow: hidden;">
-        <button id="closeChatFloating" style="position: absolute; top: 10px; right: 10px; border: none; background: none; cursor: pointer; font-size: 1.5em;">&times;</button>
-        <iframe
-            src="https://www.chatbase.co/chatbot-iframe/RxNYEF7b_s99LgJ63l31z"
-            width="100%"
-            style="height: 100%; min-height: 700px"
-            frameborder="0"
-        ></iframe>
-    </div>
-
-    <div id="modalBackdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1005;"></div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const openChatButton = document.getElementById('openChatFloatingBottom');
-            const closeChatButton = document.getElementById('closeChatFloating');
-            const floatingChatWindow = document.getElementById('floatingChatWindow');
-            const modalBackdrop = document.getElementById('modalBackdrop');
-
-            openChatButton.addEventListener('click', function() {
-                floatingChatWindow.style.display = 'block';
-                modalBackdrop.style.display = 'block'; // מציג את הרקע המחשיך
-            });
-
-            closeChatButton.addEventListener('click', function() {
-                floatingChatWindow.style.display = 'none';
-                modalBackdrop.style.display = 'none'; // מסתיר את הרקע המחשיך
-            });
-
-            // סגירת המודל בלחיצה על הרקע המחשיך
-            modalBackdrop.addEventListener('click', function() {
-                floatingChatWindow.style.display = 'none';
-                modalBackdrop.style.display = 'none';
-            });
-        });
+    
     </script>
 </body>
 </html>
