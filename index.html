@@ -3,52 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <title>מנהל כספים - מאת עמית מטיאס</title>
-    
-    <!-- EmailJS SDK -->
+
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="email-service.js"></script>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
-    <!-- קונטיינר התחברות -->
     <div id="loginContainer" class="container mx-auto max-w-md bg-white rounded-xl shadow-2xl p-6">
         <div class="text-center mb-6">
             <h1 class="text-3xl font-bold text-blue-600">מנהל כספים</h1>
             <p class="text-sm text-gray-500 mt-1">התחברות</p>
         </div>
-        
+
         <div class="space-y-4">
-            <input id="emailInput" type="email" placeholder="אימייל" 
+            <input id="emailInput" type="email" placeholder="אימייל"
                    class="w-full p-3 border rounded-lg text-right">
-            <input id="passwordInput" type="password" placeholder="סיסמה" 
+            <input id="passwordInput" type="password" placeholder="סיסמה"
                    class="w-full p-3 border rounded-lg text-right">
-            
+
             <div class="flex flex-col space-y-4">
-                <button id="loginBtn" 
+                <button id="loginBtn"
                         class="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600">
                     התחבר
                 </button>
 
-                <button id="registerBtn" 
+                <button id="registerBtn"
                         class="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600">
                     הירשם
                 </button>
 
-                <button id="googleLoginBtn" 
+                <button id="googleLoginBtn"
                         class="w-full bg-purple-700 text-white py-3 rounded-lg hover:bg-purple-800 flex items-center justify-center gap-4 font-semibold">
                     התחבר עם
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
-                         alt="Google logo" 
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                         alt="Google logo"
                          class="w-7 h-7">
                 </button>
-                
+
+                <button id="emailLinkLoginBtn"
+                        class="w-full bg-yellow-500 text-white py-3 rounded-lg hover:bg-yellow-600 font-semibold">
+                    התחבר באמצעות קישור באימייל
+                </button>
+
+                <div id="emailLinkFlow" class="hidden flex-col space-y-4 mt-4">
+                    <input id="emailLinkInput" type="email" placeholder="הזן את האימייל שלך"
+                           class="w-full p-3 border rounded-lg text-right">
+                    <button id="sendEmailLinkBtn"
+                            class="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 font-semibold">
+                        שלח קישור התחברות
+                    </button>
+                </div>
+
                 <div class="text-center mt-4">
-                    <button id="resetPasswordBtn" 
+                    <button id="resetPasswordBtn"
                             class="text-gray-800 hover:text-gray-600 text-sm font-semibold"
                             onclick="resetPassword()">
                         שכחת סיסמה?
@@ -58,34 +69,33 @@
         </div>
     </div>
 
-    <!-- קונטיינר אפליקציה -->
     <div id="appContainer" class="container mx-auto max-w-md bg-white rounded-xl shadow-2xl p-6 hidden">
         <div class="text-center mb-6">
             <h1 class="text-3xl font-bold text-blue-600">מנהל כספים</h1>
             <p id="userEmail" class="text-sm text-gray-500 mt-1"></p>
             <div class="absolute top-4 left-4 flex gap-2">
-                <button onclick="showHistory()" 
+                <button onclick="showHistory()"
                         class="bg-blue-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-600">
                     היסטוריה
                 </button>
-                <button onclick="logout()" 
+                <button onclick="logout()"
                         class="bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600">
                     התנתק
                 </button>
             </div>
         </div>
-        
+
         <div class="mb-6">
             <div id="currentDate" class="text-center text-sm text-gray-500 mb-2"></div>
             <div id="balance" class="text-center text-4xl font-extrabold text-green-600">0 ₪</div>
         </div>
 
         <div class="flex space-x-4 mb-6">
-            <button id="incomeBtn" onclick="openModal('income')" 
+            <button id="incomeBtn" onclick="openModal('income')"
                     class="flex-1 bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 transition">
                 <span class="text-xl">➕ הכנסה</span>
             </button>
-            <button id="expenseBtn" onclick="openModal('expense')" 
+            <button id="expenseBtn" onclick="openModal('expense')"
                     class="flex-1 bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition">
                 <span class="text-xl">➖ הוצאה</span>
             </button>
@@ -99,20 +109,19 @@
         <canvas id="chartArea" class="mt-6 w-full"></canvas>
     </div>
 
-    <!-- מודאל עסקה -->
     <div id="transactionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
         <div class="bg-white rounded-xl p-6 w-96">
             <h2 id="modalTitle" class="text-2xl font-bold mb-4"></h2>
-            <input id="amountInput" type="number" placeholder="סכום" 
+            <input id="amountInput" type="number" placeholder="סכום"
                    class="w-full p-3 border rounded-lg mb-4 text-right">
-            <input id="descriptionInput" type="text" placeholder="תיאור (אופציונלי)" 
+            <input id="descriptionInput" type="text" placeholder="תיאור (אופציונלי)"
                    class="w-full p-3 border rounded-lg mb-4 text-right">
             <div class="flex space-x-4">
-                <button onclick="saveTransaction()" 
+                <button onclick="saveTransaction()"
                         class="flex-1 bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600">
                     שמור
                 </button>
-                <button onclick="closeModal()" 
+                <button onclick="closeModal()"
                         class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-400">
                     ביטול
                 </button>
@@ -120,21 +129,20 @@
         </div>
     </div>
 
-    <!-- מודאל איפוס סיסמה -->
     <div id="resetPasswordModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white p-6 rounded-xl w-96">
             <h2 class="text-2xl font-bold mb-4">איפוס סיסמה</h2>
             <p class="text-gray-600 mb-4">הזן את כתובת הדוא"ל שלך ונשלח לך קישור לאיפוס הסיסמה</p>
-            <input type="email" 
-                   id="resetEmail" 
-                   class="w-full p-3 border rounded-lg mb-4 text-right" 
+            <input type="email"
+                   id="resetEmail"
+                   class="w-full p-3 border rounded-lg mb-4 text-right"
                    placeholder="כתובת דוא״ל">
             <div class="flex space-x-4">
-                <button onclick="closeResetModal()" 
+                <button onclick="closeResetModal()"
                         class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-400">
                     ביטול
                 </button>
-                <button onclick="sendResetEmail()" 
+                <button onclick="sendResetEmail()"
                         class="flex-1 bg-black text-white py-3 rounded-lg hover:bg-gray-800">
                     שלח קישור
                 </button>
@@ -144,15 +152,18 @@
 
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
-        import { 
-            getAuth, 
-            signInWithEmailAndPassword, 
-            createUserWithEmailAndPassword, 
-            signInWithPopup, 
-            GoogleAuthProvider, 
-            signOut, 
+        import {
+            getAuth,
+            signInWithEmailAndPassword,
+            createUserWithEmailAndPassword,
+            signInWithPopup,
+            GoogleAuthProvider,
+            signOut,
             onAuthStateChanged,
-            sendPasswordResetEmail
+            sendPasswordResetEmail,
+            sendSignInLinkToEmail, // הוספנו את הפונקציה הזו
+            isSignInWithEmailLink, // וגם את זו
+            signInWithEmailLink
         } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
         import { getFirestore, doc, setDoc, getDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
 
@@ -186,129 +197,129 @@
         let currentTransactionType = '';
 
 // פונקציות אימות
-  window.login = async () => {
-    const email = document.getElementById('emailInput').value;
-    const password = document.getElementById('passwordInput').value;
+        window.login = async () => {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
 
-    if (!email || !password) {
-      alert('אנא הזן אימייל וסיסמה');
-      return;
+            if (!email || !password) {
+                alert('אנא הזן אימייל וסיסמה');
+                return;
+            }
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                currentUser = userCredential.user;
+
+                document.getElementById('userEmail').textContent = currentUser.email;
+
+                const emailSent = await onLoginDetected(email);
+                if (emailSent) {
+                    console.log('מייל התחברות נשלח בהצלחה');
+                } else {
+                    console.log('מייל התחברות לא נשלח עקב שגיאה.');
+                }
+
+                switchToApp();
+                await loadUserData();
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('שגיאה בהתחברות: ' + error.message);
+            }
+        };
+
+        window.loginWithGoogle = async () => {
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                currentUser = result.user;
+
+                document.getElementById('userEmail').textContent = currentUser.email;
+
+                const emailSent = await onLoginDetected(currentUser.email);
+                if (emailSent) {
+                    console.log('מייל התחברות נשלח בהצלחה');
+                } else {
+                    console.log('מייל התחברות לא נשלח עקב שגיאה.');
+                }
+
+                switchToApp();
+                await loadUserData(); // כדאי לטעון נתונים גם אחרי התחברות עם גוגל
+
+            } catch (error) {
+                console.error('Google login error:', error);
+                alert('שגיאה בהתחברות עם גוגל: ' + error.message);
+            }
+        };
+
+        // פונקציה לקבלת התאריך והשעה הנוכחיים בפורמט YYYY-MM-DD HH:MM:SS
+    function getCurrentDateTime() {
+        const now = new Date();
+        now.setHours(now.getHours() + 2); // התאמה לאזור זמן ישראל
+
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+
+        return `<span class="math-inline">\{year\}\-</span>{month}-${day} <span class="math-inline">\{hours\}\:</span>{minutes}:${seconds}`;
     }
 
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      currentUser = userCredential.user;
+    // פונקציית שמירת עסקה
+    window.saveTransaction = async () => {
+        const amount = parseFloat(document.getElementById('amountInput').value);
+        const description = document.getElementById('descriptionInput').value;
 
-      document.getElementById('userEmail').textContent = currentUser.email;
-
-      const emailSent = await onLoginDetected(email);
-      if (emailSent) {
-        console.log('מייל התחברות נשלח בהצלחה');
-      } else {
-        console.log('מייל התחברות לא נשלח עקב שגיאה.');
-      }
-
-      switchToApp();
-      await loadUserData();
-    } catch (error) {
-      console.error('Login error:', error);
-      alert('שגיאה בהתחברות: ' + error.message);
-    }
-  };
-
-  window.loginWithGoogle = async () => {
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      currentUser = result.user;
-
-      document.getElementById('userEmail').textContent = currentUser.email;
-
-      const emailSent = await onLoginDetected(currentUser.email);
-      if (emailSent) {
-        console.log('מייל התחברות נשלח בהצלחה');
-      } else {
-        console.log('מייל התחברות לא נשלח עקב שגיאה.');
-      }
-
-      switchToApp();
-      await loadUserData(); // כדאי לטעון נתונים גם אחרי התחברות עם גוגל
-
-    } catch (error) {
-      console.error('Google login error:', error);
-      alert('שגיאה בהתחברות עם גוגל: ' + error.message);
-    }
-  };
-
-  // פונקציה לקבלת התאריך והשעה הנוכחיים בפורמט YYYY-MM-DD HH:MM:SS
-function getCurrentDateTime() {
-  const now = new Date();
-  now.setHours(now.getHours() + 2); // התאמה לאזור זמן ישראל
-
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  const seconds = String(now.getSeconds()).padStart(2, '0');
-
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-}
-
-// פונקציית שמירת עסקה
-window.saveTransaction = async () => {
-    const amount = parseFloat(document.getElementById('amountInput').value);
-    const description = document.getElementById('descriptionInput').value;
-
-    if (!amount || isNaN(amount)) {
-        alert('אנא הזן סכום תקין');
-        return;
-    }
-
-    if (!currentUser || !currentUser.email) {
-        alert('אנא התחבר מחדש למערכת');
-        return;
-    }
-
-    const transaction = {
-        type: currentTransactionType,
-        amount: Math.abs(amount),
-        description,
-        date: getCurrentDateTime()
-    };
-
-    const newTransactions = [...transactions, transaction];
-    const newBalance = currentTransactionType === 'income'
-        ? balance + amount
-        : balance - amount;
-
-    try {
-        console.log('בתוך saveTransaction, לפני שליחת מייל, ערך currentUser:', currentUser);
-        console.log('בתוך saveTransaction, לפני שליחת מייל, ערך currentUser.email:', currentUser.email); // <-- מוודאים שהאימייל קיים
-
-const transactionTypeHebrew = currentTransactionType === 'income' ? 'הכנסה' : 'הוצאה';
-        const emailResult = await onTransactionDetected({
-            amount: transaction.amount,
-            description: transaction.description || 'ללא תיאור',
-            type: currentTransactionType,
-            newBalance: newBalance,
-            userEmail: currentUser.email
-        });
-        if (emailResult) {
-            alert(`העסקה בוצעה בהצלחה. בוצעה ${transactionTypeHebrew} חדשה בחשבונך.`);
-        } else {
-            alert('העסקה בוצעה, אך הייתה בעיה בשליחת המייל.');
+        if (!amount || isNaN(amount)) {
+            alert('אנא הזן סכום תקין');
+            return;
         }
 
-        await saveUserData(newBalance, newTransactions); // קריאה אחת לשמירת נתונים
-        updateUI(newBalance, newTransactions);
-        closeModal();
+        if (!currentUser || !currentUser.email) {
+            alert('אנא התחבר מחדש למערכת');
+            return;
+        }
 
-    } catch (error) {
-        console.error('שגיאה בשמירת העסקה:', error);
-        alert('שגיאה בשמירת העסקה: ' + error.message);
-    }
-};
-        
+        const transaction = {
+            type: currentTransactionType,
+            amount: Math.abs(amount),
+            description,
+            date: getCurrentDateTime()
+        };
+
+        const newTransactions = [...transactions, transaction];
+        const newBalance = currentTransactionType === 'income'
+            ? balance + amount
+            : balance - amount;
+
+        try {
+            console.log('בתוך saveTransaction, לפני שליחת מייל, ערך currentUser:', currentUser);
+            console.log('בתוך saveTransaction, לפני שליחת מייל, ערך currentUser.email:', currentUser.email); // <-- מוודאים שהאימייל קיים
+
+            const transactionTypeHebrew = currentTransactionType === 'income' ? 'הכנסה' : 'הוצאה';
+            const emailResult = await onTransactionDetected({
+                amount: transaction.amount,
+                description: transaction.description || 'ללא תיאור',
+                type: currentTransactionType,
+                newBalance: newBalance,
+                userEmail: currentUser.email
+            });
+            if (emailResult) {
+                alert(`העסקה בוצעה בהצלחה. בוצעה ${transactionTypeHebrew} חדשה בחשבונך.`);
+            } else {
+                alert('העסקה בוצעה, אך הייתה בעיה בשליחת המייל.');
+            }
+
+            await saveUserData(newBalance, newTransactions); // קריאה אחת לשמירת נתונים
+            updateUI(newBalance, newTransactions);
+            closeModal();
+
+        } catch (error) {
+            console.error('שגיאה בשמירת העסקה:', error);
+            alert('שגיאה בשמירת העסקה: ' + error.message);
+        }
+    };
+
         // פונקציות איפוס סיסמה
         window.resetPassword = () => {
             document.getElementById('resetPasswordModal').classList.remove('hidden');
@@ -318,8 +329,7 @@ const transactionTypeHebrew = currentTransactionType === 'income' ? 'הכנסה'
         window.closeResetModal = () => {
             document.getElementById('resetPasswordModal').classList.add('hidden');
             document.getElementById('resetPasswordModal').classList.remove('flex');
-            document.getElementById('resetEmail').value = '';
-        };
+            document.
 
         window.sendResetEmail = async () => {
             const email = document.getElementById('resetEmail').value;
