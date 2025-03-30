@@ -373,12 +373,12 @@ try {
 
 updateUI(newBalance, newTransactions);
           closeModal();
-        } catch (error) { // <---- הוסף את הסוגר המסולסל הזה כאן!
+        } catch (error) {
           console.error('Error saving transaction:', error);
           alert('שגיאה בשמירת העסקה. נא לנסות שוב.');
         }
       };
-
+        
         // פונקציות איפוס סיסמה
         window.resetPassword = () => {
             document.getElementById('resetPasswordModal').classList.remove('hidden');
