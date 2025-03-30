@@ -326,11 +326,12 @@
             document.getElementById('resetPasswordModal').classList.add('flex');
         };
 
-        window.closeResetModal = () => {
-            document.getElementById('resetPasswordModal').classList.add('hidden');
-            document.getElementById('resetPasswordModal').classList.remove('flex');
+window.closeResetModal = () => {
+            document.getElementById('resetPasswordModal').classList.add('hidden');
+            document.getElementById('resetPasswordModal').classList.remove('flex');
+        }; // <-- הוספתי סוגר מסולסל סוגר כדי להיות בטוח
 
-        window.sendResetEmail = async () => {
+        window.sendResetEmail = async () => {
             const email = document.getElementById('resetEmail').value;
             
             if (!email) {
