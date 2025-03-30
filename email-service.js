@@ -41,16 +41,16 @@ async function sendEmailWithDetailedLogging(to_email, templateId, additionalData
     try {
         // הכנת נתוני המייל
         const emailData = {
-            to_email: to_email.trim(),
-            email: to_email.trim(), // הוספנו את כתובת המייל עם המפתח 'email'
+            to_email: to_email.trim(), // הגדרנו את זה ראשון
             from_name: "Finance Manager",
             display_name: to_email.split('@')[0],
             user_login: to_email.split('@')[0],
             local_time: getCurrentDateTime(),
-            ...additionalData
+            ...additionalData,
+            // אנחנו בכוונה לא מוסיפים כאן 'email' בנפרד כרגע
         };
 
-        console.log("מנסה לשלוח מייל עם הנתונים:", emailData);
+        console.log("מנסה לשלוח מייל עם הנתונים המפורטים:", JSON.stringify(emailData, null, 2));
 
         // וודא שספריית EmailJS נטענה
         if (typeof emailjs === 'undefined') {
