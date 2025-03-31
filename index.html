@@ -597,25 +597,29 @@ updateChart();
 }
 
         // פונקציות נתונים
-        async function loadUserData() {
-            try {
-                const docSnap = await getDoc(doc(db, 'users', currentUser.uid));
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    currentMonthData = data.currentMonth || { balance: 0, transactions: [] };
-                    historicalData = data.history || {};
-                    
-                    await checkAndResetMonthlyData();
-                    updateUI(currentMonthData.balance, currentMonthData.transactions);
-                } else {
-                    await initializeUserData();
-                }
-                updateCurrentDate();
-            } catch (error) {
-                console.error('Error loading user data:', error);
-                alert('שגיאה בטעינת נתונים: ' + error.message);
-            }
+async function loadUserData() {
+    if (!currentUser) {
+        console.error('currentUser is not defined, cannot load user data.');
+        return; // יוצאים מהפונקציה אם currentUser לא מוגדר
+    }
+    try {
+        const docSnap = await getDoc(doc(db, 'users', currentUser.uid));
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            currentMonthData = data.currentMonth || { balance: 0, transactions: [] };
+            historicalData = data.history || {};
+
+            await checkAndResetMonthlyData();
+            updateUI(currentMonthData.balance, currentMonthData.transactions);
+        } else {
+            await initializeUserData();
         }
+        updateCurrentDate();
+    } catch (error) {
+        console.error('Error loading user data:', error);
+        alert('שגיאה בטעינת נתונים: ' + error.message);
+    }
+}
 
         async function initializeUserData() {
             try {
