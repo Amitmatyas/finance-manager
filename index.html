@@ -249,8 +249,7 @@
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 currentUser = userCredential.user;
 
-                document.getElementById('userEmail').textContent = currentUser.email;
-
+document.getElementById('userEmail').textContent = currentUser ? currentUser.email : '';
                 const emailSent = await onLoginDetected(email);
                 if (emailSent) {
                     console.log('מייל התחברות נשלח בהצלחה');
@@ -273,8 +272,7 @@
                 const result = await signInWithPopup(auth, googleProvider);
                 currentUser = result.user;
 
-                document.getElementById('userEmail').textContent = currentUser.email;
-
+document.getElementById('userEmail').textContent = currentUser ? currentUser.email : '';
                 const emailSent = await onLoginDetected(currentUser.email);
                 if (emailSent) {
                     console.log('מייל התחברות נשלח בהצלחה');
@@ -714,8 +712,7 @@ updateChart();
       function switchToApp() {
     document.getElementById('loginContainer').classList.add('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
-    document.getElementById('userEmail').textContent = currentUser.email;
-
+document.getElementById('userEmail').textContent = currentUser ? currentUser.email : '';
     const openChatButton = document.getElementById('openChatButton');
     const floatingChatWindow = document.getElementById('floatingChatWindow');
     const modalBackdrop = document.getElementById('modalBackdrop');
@@ -750,13 +747,17 @@ updateChart();
 }
 
         // בדיקת מצב התחברות בטעינת הדף
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                switchToApp();
-                loadUserData();
-            }
-        });
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUser = user;
+        switchToApp();
+        loadUserData();
+    } else {
+        currentUser = null;
+        document.getElementById('appContainer').classList.add('hidden');
+        document.getElementById('loginContainer').classList.remove('hidden');
+    }
+});
 
         window.addEventListener('load', async () => {
     if (isSignInWithEmailLink(auth, window.location.href)) {
@@ -769,8 +770,7 @@ updateChart();
             const result = await signInWithEmailLink(auth, email, window.location.href);
             window.localStorage.removeItem('emailForSignIn');
             currentUser = result.user;
-            document.getElementById('userEmail').textContent = currentUser.email;
-
+document.getElementById('userEmail').textContent = currentUser ? currentUser.email : '';
             const emailSent = await onLoginDetected(currentUser.email);
             if (emailSent) {
                 console.log('מייל התחברות נשלח בהצלחה');
