@@ -216,7 +216,7 @@
         let currentUser = null;
         let balance = 0;
         let transactions = [];
-        let chart = null;
+        let  = null;
         let currentMonthData = {
             balance: 0,
             transactions: []
@@ -542,48 +542,47 @@ document.getElementById('sendEmailLinkBtn').addEventListener('click', window.sen
                 </li>
             `).join('');
 
-            updateChart();
+            update();
         }
 
-       function updateChart() {
+    function updateChart() {
     const ctxElement = document.getElementById('chartArea');
     if (ctxElement) {
         const ctx = ctxElement.getContext('2d');
-        // ... שאר קוד הגרף ...
+
+        if (chart) chart.destroy();
+
+        const incomeData = transactions
+            .filter(t => t.type === 'income')
+            .map(t => t.amount);
+
+        const expenseData = transactions
+            .filter(t => t.type === 'expense')
+            .map(t => t.amount);
+
+        chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['הכנסות', 'הוצאות'],
+                datasets: [{
+                    data: [
+                        incomeData.reduce((a, b) => a + b, 0),
+                        expenseData.reduce((a, b) => a + b, 0)
+                    ],
+                    backgroundColor: ['#10B981', '#EF4444']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
     } else {
         console.error('אלמנט ה-Canvas עם ID "chartArea" לא נמצא.');
     }
 }
-            
-            if (chart) chart.destroy();
-
-            const incomeData = transactions
-                .filter(t => t.type === 'income')
-                .map(t => t.amount);
-
-            const expenseData = transactions
-                .filter(t => t.type === 'expense')
-                .map(t => t.amount);
-
-            chart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['הכנסות', 'הוצאות'],
-                    datasets: [{
-                        data: [
-                            incomeData.reduce((a, b) => a + b, 0),
-                            expenseData.reduce((a, b) => a + b, 0)
-                        ],
-                        backgroundColor: ['#10B981', '#EF4444']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { display: false }
-                    }
-                }
-            });
 
         // פונקציות נתונים
         async function loadUserData() {
@@ -698,11 +697,43 @@ document.getElementById('sendEmailLinkBtn').addEventListener('click', window.sen
         });
 
         // פונקציה להחלפה בין מסכים
-        function switchToApp() {
-            document.getElementById('loginContainer').classList.add('hidden');
-            document.getElementById('appContainer').classList.remove('hidden');
-            document.getElementById('userEmail').textContent = currentUser.email;
-        }
+      function switchToApp() {
+    document.getElementById('loginContainer').classList.add('hidden');
+    document.getElementById('appContainer').classList.remove('hidden');
+    document.getElementById('userEmail').textContent = currentUser.email;
+
+    const openChatButton = document.getElementById('openChatButton');
+    const floatingChatWindow = document.getElementById('floatingChatWindow');
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const closeChatButton = document.getElementById('closeChatFloating'); // ייתכן שתצטרך את זה כאן גם
+
+    if (openChatButton) {
+        openChatButton.addEventListener('click', function() {
+            if (floatingChatWindow && modalBackdrop) {
+                floatingChatWindow.style.display = 'block';
+                modalBackdrop.style.display = 'block';
+            }
+        });
+    }
+
+    if (closeChatButton) {
+        closeChatButton.addEventListener('click', function() {
+            if (floatingChatWindow && modalBackdrop) {
+                floatingChatWindow.style.display = 'none';
+                modalBackdrop.style.display = 'none';
+            }
+        });
+    }
+
+    if (modalBackdrop) {
+        modalBackdrop.addEventListener('click', function() {
+            if (floatingChatWindow) {
+                floatingChatWindow.style.display = 'none';
+                modalBackdrop.style.display = 'none';
+            }
+        });
+    }
+}
 
         // בדיקת מצב התחברות בטעינת הדף
         onAuthStateChanged(auth, (user) => {
