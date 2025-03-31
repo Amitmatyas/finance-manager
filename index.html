@@ -104,37 +104,50 @@
          <ul id="transactions" class="space-y-2 max-h-64 overflow-y-auto"></ul>
      </div>
 
-     <button id="openChatButton" class="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 mt-4">
-         התכתב עם היועץ הפיננסי שלך
-     </button>
-</div>
+     <div id="appContainer" class="container mx-auto max-w-md bg-white rounded-xl shadow-2xl p-6 hidden">
+        <button id="openChatButton" class="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 mt-4">
+            התכתב עם היועץ הפיננסי שלך
+        </button>
+    </div>
 
-    <div id="modalBackdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1005;"></div>
+    <div id="modalBackdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1005;"></div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const openChatButton = document.getElementById('openChatButton');
-            const closeChatButton = document.getElementById('closeChatFloating');
-            const floatingChatWindow = document.getElementById('floatingChatWindow');
-            const modalBackdrop = document.getElementById('modalBackdrop');
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const openChatButton = document.getElementById('openChatButton');
+            const closeChatButton = document.getElementById('closeChatFloating');
+            const floatingChatWindow = document.getElementById('floatingChatWindow');
+            const modalBackdrop = document.getElementById('modalBackdrop');
 
-            openChatButton.addEventListener('click', function() {
-                floatingChatWindow.style.display = 'block';
-                modalBackdrop.style.display = 'block'; // מציג את הרקע המחשיך
-            });
+            if (openChatButton) {
+                openChatButton.addEventListener('click', function() {
+                    if (floatingChatWindow && modalBackdrop) {
+                        floatingChatWindow.style.display = 'block';
+                        modalBackdrop.style.display = 'block'; // מציג את הרקע המחשיך
+                    }
+                });
+            }
 
-            closeChatButton.addEventListener('click', function() {
-                floatingChatWindow.style.display = 'none';
-                modalBackdrop.style.display = 'none'; // מסתיר את הרקע המחשיך
-            });
+            if (closeChatButton) {
+                closeChatButton.addEventListener('click', function() {
+                    if (floatingChatWindow && modalBackdrop) {
+                        floatingChatWindow.style.display = 'none';
+                        modalBackdrop.style.display = 'none'; // מסתיר את הרקע המחשיך
+                    }
+                });
+            }
 
-            // סגירת המודל בלחיצה על הרקע המחשיך
-            modalBackdrop.addEventListener('click', function() {
-                floatingChatWindow.style.display = 'none';
-                modalBackdrop.style.display = 'none';
-            });
-        });
-    </script>
+            // סגירת המודל בלחיצה על הרקע המחשיך
+            if (modalBackdrop) {
+                modalBackdrop.addEventListener('click', function() {
+                    if (floatingChatWindow) {
+                        floatingChatWindow.style.display = 'none';
+                        modalBackdrop.style.display = 'none';
+                    }
+                });
+            }
+        });
+    </script>
 </div>
 
     <div id="transactionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
@@ -243,9 +256,11 @@
                 const emailSent = await onLoginDetected(email);
                 if (emailSent) {
                     console.log('מייל התחברות נשלח בהצלחה');
-                } else {
-                    console.log('מייל התחברות לא נשלח עקב שגיאה.');
-                }
+} else {
+                console.log('מייל התחברות לא נשלח עקב שגיאה.');
+            }
+
+            switchToApp();
 
                 switchToApp();
                 await loadUserData();
@@ -265,9 +280,11 @@
                 const emailSent = await onLoginDetected(currentUser.email);
                 if (emailSent) {
                     console.log('מייל התחברות נשלח בהצלחה');
-                } else {
-                    console.log('מייל התחברות לא נשלח עקב שגיאה.');
-                }
+} else {
+                console.log('מייל התחברות לא נשלח עקב שגיאה.');
+            }
+
+            switchToApp();
 
                 switchToApp();
                 await loadUserData(); // כדאי לטעון נתונים גם אחרי התחברות עם גוגל
@@ -760,9 +777,11 @@ document.getElementById('sendEmailLinkBtn').addEventListener('click', window.sen
             const emailSent = await onLoginDetected(currentUser.email);
             if (emailSent) {
                 console.log('מייל התחברות נשלח בהצלחה');
-            } else {
-                console.log('מייל התחברות לא נשלח עקב שגיאה.');
-            }
+} else {
+                console.log('מייל התחברות לא נשלח עקב שגיאה.');
+            }
+
+            switchToApp();
 
             switchToApp();
             await loadUserData();
