@@ -597,44 +597,6 @@ document.getElementById('sendEmailLinkBtn').addEventListener('click', window.sen
                     }
                 }
             });
-        </script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const openChatButton = document.getElementById('openChatFloatingBottom');
-            const closeChatButton = document.getElementById('closeChatFloating');
-            const floatingChatWindow = document.getElementById('floatingChatWindow');
-            const chatbaseContainer = document.getElementById('chatbase-container');
-            const modalBackdrop = document.getElementById('modalBackdrop');
-            openChatButton.addEventListener('click', function() {
-                floatingChatWindow.style.display = 'block';
-                modalBackdrop.style.display = 'block'; // מציג את הרקע המחשיך
-                // טען את קוד ההטמעה של Chatbase רק כשהחלון נפתח בפעם הראשונה
-                if (!chatbaseContainer.querySelector('.chatbase-widget')) {
-                    const script = document.createElement('script');
-                    script.src = 'https://www.gstatic.com/firebasejs/ui/3.6.0/firebase-ui-auth__he.js';
-                    script.async = true;
-                    script.onload = function() {
-                        window.firebase.initializeApp(firebaseConfig);
-                        const ui = new window.firebaseui.auth.AuthUI(window.firebase.auth());
-                        ui.start('#chatbase-container', {
-                            signInOptions: [
-                                window.firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-                                window.firebase.auth.EmailAuthProvider.PROVIDER_ID
-                            ],
-                            signInSuccessUrl: window.location.href
-                        });
-                    };
-                    chatbaseContainer.appendChild(script);
-                }
-            });
-            closeChatButton.addEventListener('click', function() {
-                floatingChatWindow.style.display = 'none';
-                modalBackdrop.style.display = 'none';
-            });
-            modalBackdrop.addEventListener('click', function() {
-                floatingChatWindow.style.display = 'none';
-                modalBackdrop.style.display = 'none';
-            });
-        });
     </script>
 </body>
 </html>
