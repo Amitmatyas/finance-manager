@@ -195,7 +195,14 @@
         // פונקציה לקבלת התאריך והשעה הנוכחיים בפורמט YYYY-MM-DD HH:MM:SS
     function getCurrentDateTime() {
     const now = new Date();
-    now.setHours(now.getHours() + 2); // התאמה לאזור זמן ישראל
+    // בדיקה אם זה שעון קיץ בישראל
+    const isDST = (date) => {
+        const jan = new Date(date.getFullYear(), 0, 1).getTimezoneOffset();
+        const jul = new Date(date.getFullYear(), 6, 1).getTimezoneOffset();
+        return Math.max(jan, jul) !== date.getTimezoneOffset();
+    };
+    const offset = isDST(now) ? 3 : 2; // 3 שעות בקיץ, 2 שעות בחורף
+    now.setHours(now.getHours() + offset); // התאמה לאזור זמן ישראל
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
