@@ -79,7 +79,10 @@
         <button id="openChatBtn" class="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 mt-4">
             התכתב עם היועץ הפיננסי שלך
         </button>
-        <div id="chatContainer" class="hidden mt-4">
+    </div>
+    <div id="chatModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-6 w-96 shadow-lg">
+            <button id="closeChatBtn" class="absolute top-2 right-2 text-xl">&times;</button>
             <iframe
                 src="https://www.chatbase.co/chatbot-iframe/RxNYEF7b_s99LgJ63l31z"
                 width="100%"
