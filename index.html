@@ -448,7 +448,7 @@ function updateUI(newBalance, newTransactions) {
           hour: '2-digit',
           minute: '2-digit',
           second: '2-digit',
-          hour12: false // הצגת שעה בפורמט 24 שעות
+          hour12: false
         });
 
     return `
@@ -478,31 +478,32 @@ function displayCurrentIsraelTime(elementId) {
 
 // שימוש לדוגמה בפונקציה להצגת שעה נוכחית (תצטרך אלמנט HTML עם id="currentTime" בדף שלך)
 // displayCurrentIsraelTime('currentTime');
-            function updateChart() {
-                const ctx = document.getElementById('chartArea').getContext('2d');
-                if (chart) chart.destroy();
-                const incomeData = transactions.filter(t => t.type === 'income').map(t => t.amount);
-                const expenseData = transactions.filter(t => t.type === 'expense').map(t => t.amount);
-                chart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: ['הכנסות', 'הוצאות'],
-                        datasets: [{
-                            data: [
-                                incomeData.reduce((a, b) => a + b, 0),
-                                expenseData.reduce((a, b) => a + b, 0)
-                            ],
-                            backgroundColor: ['#10B981', '#EF4444']
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: { display: false }
-                        }
-                    }
-                });
-            }
+
+function updateChart() {
+  const ctx = document.getElementById('chartArea').getContext('2d');
+  if (chart) chart.destroy();
+  const incomeData = transactions.filter(t => t.type === 'income').map(t => t.amount);
+  const expenseData = transactions.filter(t => t.type === 'expense').map(t => t.amount);
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['הכנסות', 'הוצאות'],
+      datasets: [{
+        data: [
+          incomeData.reduce((a, b) => a + b, 0),
+          expenseData.reduce((a, b) => a + b, 0)
+        ],
+        backgroundColor: ['#10B981', '#EF4444']
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+}
             // פונקציות נתונים
             async function loadUserData() {
                 try {
