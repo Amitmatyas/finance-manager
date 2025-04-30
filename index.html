@@ -438,22 +438,18 @@ function updateUI(newBalance, newTransactions) {
   transactions = newTransactions;
   document.getElementById('balance').textContent = `${balance} ₪`;
   document.getElementById('transactions').innerHTML = transactions.map(t => {
-    // טיפול פשוט בתאריך - ניסיון אחד בלבד
-    let formattedDate = 'תאריך לא תקין';
-    
-    try {
-      if (t.date && typeof t.date === 'string') {
-        // שימוש רק בשיטה אחת פשוטה
-        let dateObject = new Date(t.date);
-        
-        // בדיקה שהתאריך תקין
-        if (!isNaN(dateObject.getTime())) {
-          formattedDate = dateObject.toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' });
-        }
-      }
-    } catch (error) {
-      console.error('שגיאה בעיבוד התאריך:', t.date);
-    }
+    const dateObject = new Date(t.date);
+    const formattedDate = isNaN(dateObject)
+      ? 'תאריך לא תקין'
+      : dateObject.toLocaleString(undefined, { // שימוש בהגדרות ברירת מחדל של הדפדפן
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false // הצגת שעה בפורמט 24 שעות
+        });
 
     return `
       <li class="flex justify-between p-2 rounded-lg ${t.type === 'income' ? 'bg-green-100' : 'bg-red-100'}">
