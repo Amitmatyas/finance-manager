@@ -440,16 +440,14 @@ document.getElementById('sendEmailLinkBtn').addEventListener('click', window.sen
                 document.getElementById('balance').textContent = `${balance} ₪`;
 document.getElementById('transactions').innerHTML = transactions.map(t => {
     let dateObject = new Date(t.date);
-    // בדיקה אם האובייקט תאריך תקין
     if (isNaN(dateObject)) {
-        // אם לא תקין, ננסה לפרש עם 'T'
         dateObject = new Date(t.date.replace(' ', 'T'));
     }
     return `
         <li class="flex justify-between p-2 rounded-lg ${t.type === 'income' ? 'bg-green-100' : 'bg-red-100'}">
             <div class="flex flex-col">
                 <span class="text-gray-800">${t.description || ''}</span>
-                <span class="text-xs text-gray-500">${isNaN(dateObject) ? 'תאריך לא תקין' : dateObject.toLocaleString()}</span>
+                <span class="text-xs text-gray-500">${isNaN(dateObject) ? 'תאריך לא תקין' : dateObject.toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })}</span>
             </div>
             <span class="${t.type === 'income' ? 'text-green-600' : 'text-red-600'}">
                 ${t.type === 'income' ? '+' : '-'} ${t.amount} ₪
