@@ -453,7 +453,7 @@ async function updateUI(newBalance, newTransactions) {
         }
 
         if (data.date_time_txt) {
-          return { ...t, formattedDate: formatDate(new Date(data.date_time_txt)) };
+return { ...t, formattedDate: formatDate(new Date(data.date_time_unix * 1000)) };
         } else {
           console.warn("שירות IP Geolocation לא סיפק תאריך תקין עבור IP:", t.ipAddress);
           return { ...t, formattedDate: formatDate(new Date(t.date)) }; // חזרה לפורמט מקומי רגיל
