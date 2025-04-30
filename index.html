@@ -449,7 +449,7 @@ document.getElementById('transactions').innerHTML = transactions.map(t => {
         <li class="flex justify-between p-2 rounded-lg ${t.type === 'income' ? 'bg-green-100' : 'bg-red-100'}">
             <div class="flex flex-col">
                 <span class="text-gray-800">${t.description || ''}</span>
-                <span class="text-xs text-gray-500">${isNaN(dateObject) ? 'תאריך לא תקין' : dateObject.toLocaleString('he-IL')}</span>
+                <span class="text-xs text-gray-500">${isNaN(dateObject) ? 'תאריך לא תקין' : dateObject.toLocaleString()}</span>
             </div>
             <span class="${t.type === 'income' ? 'text-green-600' : 'text-red-600'}">
                 ${t.type === 'income' ? '+' : '-'} ${t.amount} ₪
