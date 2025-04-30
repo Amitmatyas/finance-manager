@@ -433,16 +433,21 @@ document.getElementById('sendEmailLinkBtn').addEventListener('click', window.sen
                 modal.appendChild(content);
                 document.body.appendChild(modal);
             };
-// פונקציות UI
 function updateUI(newBalance, newTransactions) {
   balance = newBalance;
   transactions = newTransactions;
   document.getElementById('balance').textContent = `${balance} ₪`;
   document.getElementById('transactions').innerHTML = transactions.map(t => {
+    console.log(`מחרוזת תאריך מקורית: ${t.date}`); // הדפס את מחרוזת התאריך המקורית
+
     let dateObject = new Date(t.date);
+    console.log(`אחרי ניסיון ראשון (new Date): ${dateObject}`);
+
     if (isNaN(dateObject)) {
       dateObject = new Date(t.date.replace(' ', 'T'));
+      console.log(`אחרי החלפת רווח ב-'T': ${dateObject}`);
     }
+
     if (isNaN(dateObject)) {
       const parts = t.date.split(/[\/\- ]+/);
       if (parts.length === 3) {
@@ -450,6 +455,7 @@ function updateUI(newBalance, newTransactions) {
         const month = parseInt(parts[1], 10) - 1;
         const year = parseInt(parts[2], 10);
         dateObject = new Date(year, month, day);
+        console.log(`אחרי ניסיון פיצול (DD/MM/YYYY): ${dateObject}`);
       }
     }
 
