@@ -433,30 +433,57 @@ document.getElementById('sendEmailLinkBtn').addEventListener('click', window.sen
                 modal.appendChild(content);
                 document.body.appendChild(modal);
             };
-            // פונקציות UI
-            function updateUI(newBalance, newTransactions) {
-                balance = newBalance;
-                transactions = newTransactions;
-                document.getElementById('balance').textContent = `${balance} ₪`;
-document.getElementById('transactions').innerHTML = transactions.map(t => {
+// פונקציות UI
+function updateUI(newBalance, newTransactions) {
+  balance = newBalance;
+  transactions = newTransactions;
+  document.getElementById('balance').textContent = `${balance} ₪`;
+  document.getElementById('transactions').innerHTML = transactions.map(t => {
     let dateObject = new Date(t.date);
     if (isNaN(dateObject)) {
-        dateObject = new Date(t.date.replace(' ', 'T'));
+      dateObject = new Date(t.date.replace(' ', 'T'));
     }
+    if (isNaN(dateObject)) {
+      const parts = t.date.split(/[\/\- ]+/);
+      if (parts.length === 3) {
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const year = parseInt(parts[2], 10);
+        dateObject = new Date(year, month, day);
+      }
+    }
+
+    const formattedDate = isNaN(dateObject)
+      ? 'תאריך לא תקין'
+      : dateObject.toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' });
+
     return `
-        <li class="flex justify-between p-2 rounded-lg ${t.type === 'income' ? 'bg-green-100' : 'bg-red-100'}">
-            <div class="flex flex-col">
-                <span class="text-gray-800">${t.description || ''}</span>
-                <span class="text-xs text-gray-500">${isNaN(dateObject) ? 'תאריך לא תקין' : dateObject.toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })}</span>
-            </div>
-            <span class="${t.type === 'income' ? 'text-green-600' : 'text-red-600'}">
-                ${t.type === 'income' ? '+' : '-'} ${t.amount} ₪
-            </span>
-        </li>
+      <li class="flex justify-between p-2 rounded-lg ${t.type === 'income' ? 'bg-green-100' : 'bg-red-100'}">
+        <div class="flex flex-col">
+          <span class="text-gray-800">${t.description || ''}</span>
+          <span class="text-xs text-gray-500">${formattedDate}</span>
+        </div>
+        <span class="${t.type === 'income' ? 'text-green-600' : 'text-red-600'}">
+          ${t.type === 'income' ? '+' : '-'} ${t.amount} ₪
+        </span>
+      </li>
     `;
-}).join('');
-                updateChart();
-            }
+  }).join('');
+  updateChart();
+}
+
+// פונקציה נוספת שיכולה להציג את התאריך והשעה הנוכחיים בישראל (לדוגמה, במקום אחר בדף)
+function displayCurrentIsraelTime(elementId) {
+  const now = new Date();
+  const currentTimeIsrael = now.toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' });
+  const element = document.getElementById(elementId);
+  if (element) {
+    element.textContent = `השעה הנוכחית בישראל: ${currentTimeIsrael}`;
+  }
+}
+
+// שימוש לדוגמה בפונקציה להצגת שעה נוכחית (תצטרך אלמנט HTML עם id="currentTime" בדף שלך)
+// displayCurrentIsraelTime('currentTime');
             function updateChart() {
                 const ctx = document.getElementById('chartArea').getContext('2d');
                 if (chart) chart.destroy();
