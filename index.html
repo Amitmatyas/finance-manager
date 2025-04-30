@@ -438,30 +438,36 @@ function updateUI(newBalance, newTransactions) {
   transactions = newTransactions;
   document.getElementById('balance').textContent = `${balance} ₪`;
   document.getElementById('transactions').innerHTML = transactions.map(t => {
-    console.log(`מחרוזת תאריך מקורית: ${t.date}`); // הדפס את מחרוזת התאריך המקורית
+    console.log(`מחרוזת תאריך מקורית (בתוך המפה): ${t.date}`);
 
-    let dateObject = new Date(t.date);
-    console.log(`אחרי ניסיון ראשון (new Date): ${dateObject}`);
+    let dateObject;
+    if (t.date && typeof t.date === 'string' && t.date.trim() !== '') {
+      dateObject = new Date(t.date);
+      console.log(`אחרי ניסיון ראשון (new Date): ${dateObject}`);
 
-    if (isNaN(dateObject)) {
-      dateObject = new Date(t.date.replace(' ', 'T'));
-      console.log(`אחרי החלפת רווח ב-'T': ${dateObject}`);
-    }
-
-    if (isNaN(dateObject)) {
-      const parts = t.date.split(/[\/\- ]+/);
-      if (parts.length === 3) {
-        const day = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10) - 1;
-        const year = parseInt(parts[2], 10);
-        dateObject = new Date(year, month, day);
-        console.log(`אחרי ניסיון פיצול (DD/MM/YYYY): ${dateObject}`);
+      if (isNaN(dateObject)) {
+        dateObject = new Date(t.date.replace(' ', 'T'));
+        console.log(`אחרי החלפת רווח ב-'T': ${dateObject}`);
       }
+
+      if (isNaN(dateObject)) {
+        const parts = t.date.split(/[\/\- ]+/);
+        if (parts.length === 3) {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1;
+          const year = parseInt(parts[2], 10);
+          dateObject = new Date(year, month, day);
+          console.log(`אחרי ניסיון פיצול (DD/MM/YYYY): ${dateObject}`);
+        }
+      }
+    } else {
+      dateObject = null; // אם t.date לא מוגדר, לא מחרוזת או ריק
+      console.log(`t.date לא תקין: ${t.date}`);
     }
 
-    const formattedDate = isNaN(dateObject)
-      ? 'תאריך לא תקין'
-      : dateObject.toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' });
+    const formattedDate = dateObject instanceof Date && !isNaN(dateObject)
+      ? dateObject.toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })
+      : 'תאריך לא תקין';
 
     return `
       <li class="flex justify-between p-2 rounded-lg ${t.type === 'income' ? 'bg-green-100' : 'bg-red-100'}">
